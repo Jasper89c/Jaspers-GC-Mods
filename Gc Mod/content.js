@@ -1,6 +1,17 @@
-/** * GC Helper Tool - Final Polished Version with Global Clustering
+/** * GC Helper Tool - Final Polished Version with Auto-Explore & Global Clustering
  */
 
+// === 1. AUTO-EXPLORE FEATURE ===
+// Instantly runs as soon as the script injects to catch the button immediately
+(function autoExplore() {
+    // Looks for the button via its onclick attribute containing 'com_explore'
+    const exploreBtn = document.querySelector('input[type="button"][onclick*="com_explore"]');
+    if (exploreBtn) {
+        exploreBtn.click();
+    }
+})();
+
+// === 2. MAIN EXTENSION PANEL LOGIC ===
 chrome.storage.local.get(['panelPos', 'presets', 'storedSid'], (res) => {
     const pos = res.panelPos || { top: '20px', left: 'auto', right: '20px' };
     const savedPresets = res.presets || {};
@@ -38,7 +49,7 @@ chrome.storage.local.get(['panelPos', 'presets', 'storedSid'], (res) => {
             <a href="i.cfm?f=com_empire&cm=3" id="lnk-cmd" class="gcc-footer-link">Cmd</a>
             <a href="i.cfm?f=com_ship" id="lnk-build" class="gcc-footer-link">Build</a>
             <a href="i.cfm?f=com_disband" id="lnk-manage" class="gcc-footer-link">Fleet</a>
-            <a href="i.cfm?f=rank2" id="lnk-rank" class="gcc-footer-link">Rank</a>
+            <a href="i.cfm?f=rank" id="lnk-rank" class="gcc-footer-link">Rank</a>
         </div>
 
         <style>
@@ -55,13 +66,12 @@ async function performGlobalCluster(tid, sid) {
     status.innerText = "⏳ Upgrading...";
     status.style.color = "#aaa";
 
-    // URL to confirm the upgrade with mineral selection (goodid 2)
     const url = `i.cfm?&${sid}&f=com_colupgrade&tid=${tid}&con=1`;
     
     try {
         const response = await fetch(url, {
             method: 'POST',
-            body: new URLSearchParams({ 'goodid': '2' }) // Defaults to first available mineral
+            body: new URLSearchParams({ 'goodid': '2' })
         });
 
         if (response.ok) {
@@ -160,4 +170,280 @@ function setupLogic(container, presets, sid) {
     handle.onmousedown = (e) => { if(e.target.id === 'gcc-refresh-btn') return; dragging = true; offset.x = e.clientX - container.offsetLeft; offset.y = e.clientY - container.offsetTop; };
     document.onmousemove = (e) => { if (dragging) { container.style.left = (e.clientX - offset.x) + 'px'; container.style.top = (e.clientY - offset.y) + 'px'; container.style.right = 'auto'; } };
     document.onmouseup = () => { if (dragging) { dragging = false; chrome.storage.local.set({ panelPos: { top: container.style.top, left: container.style.left } }); } };
+
+    // 5. Ship hover tooltips
+    attachShipHoverTooltips();
+}
+
+const shipStatCache = {};
+
+function attachShipHoverTooltips() {
+    const tooltip = createShipTooltip();
+
+    const bindTooltip = (anchor) => {
+        if (!anchor || anchor.__gccTooltipBound) return;
+        anchor.__gccTooltipBound = true;
+
+        const card = anchor.closest('.gc-builder-card');
+        const shipHref = anchor.getAttribute('href');
+        const detailUrl = shipHref ? new URL(shipHref, window.location.href).href : null;
+
+        const showTooltip = (event, content) => {
+            tooltip.innerHTML = content;
+            tooltip.style.display = 'block';
+            positionShipTooltip(event, tooltip);
+        };
+
+        anchor.addEventListener('mouseenter', async (event) => {
+            const fallback = buildShipTooltipHtml(extractShipStats(card));
+            showTooltip(event, fallback || 'Loading ship stats...');
+
+            if (!detailUrl) return;
+            const stats = await loadShipStatsFromUrl(detailUrl);
+            if (!stats || Object.keys(stats).length === 0) return;
+
+            showTooltip(event, buildShipTooltipHtml(stats));
+        });
+
+        anchor.addEventListener('mousemove', (event) => {
+            if (tooltip.style.display === 'block') positionShipTooltip(event, tooltip);
+        });
+
+        anchor.addEventListener('mouseleave', () => {
+            tooltip.style.display = 'none';
+        });
+    };
+
+    const attachAll = () => {
+        const anchors = Array.from(document.querySelectorAll('.gc-builder-card__titleline a'));
+        anchors.forEach(bindTooltip);
+    };
+
+    attachAll();
+    const observer = new MutationObserver(attachAll);
+    observer.observe(document.body, { childList: true, subtree: true });
+}
+
+async function loadShipStatsFromUrl(url) {
+    if (shipStatCache[url]) return shipStatCache[url];
+
+    try {
+        const response = await fetch(url, { credentials: 'same-origin' });
+        if (!response.ok) return null;
+        const html = await response.text();
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const stats = extractShipStatsFromDetailDoc(doc);
+        shipStatCache[url] = stats;
+        return stats;
+    } catch (e) {
+        return null;
+    }
+}
+
+function createLabelMap() {
+    const map = shipStatLabels.reduce((labelMap, label) => {
+        labelMap[label.toLowerCase()] = label;
+        return labelMap;
+    }, {});
+
+    const synonyms = {
+        'pwr': 'Power rating',
+        'power': 'Power rating',
+        'power rating': 'Power rating',
+        'scanner': 'Scanner rating',
+        'scanner rating': 'Scanner rating',
+        'weapon': 'Weapon',
+        'energy damage': 'Energy Damage',
+        'kinetic damage': 'Kinetic Damage',
+        'missile damage': 'Missile Damage',
+        'chemical damage': 'Chemical Damage',
+        'hull': 'Hull',
+        'range': 'Range',
+        'absorption shield': 'Absorption Shield',
+        'ecm': 'ECM',
+        'ionized hull': 'Ionized Hull',
+        'energy shield': 'Energy Shield'
+    };
+
+    Object.entries(synonyms).forEach(([key, canonical]) => {
+        map[key] = canonical;
+    });
+
+    return map;
+}
+
+function extractShipStatsFromDetailDoc(doc) {
+    if (!doc || !doc.body) return null;
+    const stats = {};
+    const labelMap = createLabelMap();
+
+    const textContent = (doc.body.textContent || '').replace(/\u00A0/g, ' ').replace(/\s+/g, ' ').trim();
+    shipStatLabels.forEach(label => {
+        const regex = new RegExp(label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*[:\-]?\\s*([+\d.,%]+)', 'i');
+        const match = textContent.match(regex);
+        if (match) stats[label] = match[1].trim();
+    });
+
+    const rows = Array.from(doc.querySelectorAll('tr'));
+    rows.forEach(row => {
+        const cells = Array.from(row.querySelectorAll('td,th'));
+        if (cells.length < 2) return;
+        const rawLabel = cells[0].textContent.trim().replace(/[:\s]+$/, '');
+        const rawValue = cells[1].textContent.trim();
+        const normalized = rawLabel.replace(/\s+/g, ' ').toLowerCase();
+        if (labelMap[normalized]) stats[labelMap[normalized]] = rawValue;
+    });
+
+    const dtElements = Array.from(doc.querySelectorAll('dt'));
+    dtElements.forEach(dt => {
+        const dd = dt.nextElementSibling;
+        if (!dd || dd.tagName !== 'DD') return;
+        const rawLabel = dt.textContent.trim().replace(/[:\s]+$/, '');
+        const rawValue = dd.textContent.trim();
+        const normalized = rawLabel.replace(/\s+/g, ' ').toLowerCase();
+        if (labelMap[normalized]) stats[labelMap[normalized]] = rawValue;
+    });
+
+    return stats;
+}
+
+function createShipTooltip() {
+    let tooltip = document.getElementById('gcc-ship-tooltip');
+    if (tooltip) return tooltip;
+
+    tooltip = document.createElement('div');
+    tooltip.id = 'gcc-ship-tooltip';
+    tooltip.style.cssText = 'position:fixed; z-index:100000; pointer-events:none; display:none; max-width:320px; background:rgba(18,18,18,0.95); border:1px solid #555; border-radius:10px; box-shadow:0 14px 32px rgba(0,0,0,0.45); padding:12px 14px; color:#f5f5f5; font-size:12px; line-height:1.4; white-space:pre-wrap;';
+    document.body.appendChild(tooltip);
+    return tooltip;
+}
+
+const shipStatLabels = [
+    'Weapon',
+    'Energy Damage',
+    'Kinetic Damage',
+    'Missile Damage',
+    'Chemical Damage',
+    'Hull',
+    'Range',
+    'Scanner rating',
+    'Power rating',
+    'Energy Shield',
+    'Absorption Shield',
+    'ECM',
+    'Ionized Hull'
+];
+
+function extractShipStats(container) {
+    if (!container) return null;
+    const stats = {};
+    const getContainer = (el) => {
+        if (!el) return null;
+        if (el.closest) {
+            return el.closest('.gc-builder-card') || el.closest('.ship-row') || el.closest('tr') || el.closest('.fleet-card') || el.closest('table') || el;
+        }
+        return el;
+    };
+
+    container = getContainer(container);
+    if (!container) return null;
+
+    const labelMap = createLabelMap();
+
+    const extractFromText = (text) => {
+        const cleaned = text.replace(/\u00A0/g, ' ').replace(/\s+/g, ' ').trim();
+        for (const label of shipStatLabels) {
+            const regex = new RegExp(label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*[:\-]?\\s*([+\d.,%]+)', 'i');
+            const match = cleaned.match(regex);
+            if (match) {
+                stats[label] = match[1].trim();
+            }
+        }
+        const fallbackRegex = /(?:Pwr|Power)\s*[:\-]?\s*([+\d.,%]+)/i;
+        const fallbackMatch = cleaned.match(fallbackRegex);
+        if (fallbackMatch && !stats['Power rating']) stats['Power rating'] = fallbackMatch[1].trim();
+    };
+
+    const gatherElements = (root) => {
+        const elements = new Set();
+        if (!root) return elements;
+        if (root.tagName === 'TR') {
+            elements.add(root);
+            if (root.previousElementSibling) elements.add(root.previousElementSibling);
+            if (root.nextElementSibling) elements.add(root.nextElementSibling);
+            if (root.parentElement) elements.add(root.parentElement);
+        }
+        if (root.tagName === 'TD' || root.tagName === 'TH') {
+            const row = root.closest('tr');
+            if (row) elements.add(row);
+        }
+        if (root.tagName === 'TABLE' && root.querySelectorAll) {
+            root.querySelectorAll('tr').forEach(r => elements.add(r));
+        }
+        root.querySelectorAll && root.querySelectorAll('div,span,td,th,li,p,dd,dt').forEach(el => elements.add(el));
+        return elements;
+    };
+
+    const elements = gatherElements(container);
+    elements.forEach(el => {
+        const text = (el.textContent || '').trim();
+        if (!text) return;
+        extractFromText(text);
+
+        const children = Array.from(el.children || []);
+        if (children.length === 2) {
+            const label = children[0].textContent.trim().replace(/[:\s]+$/,'');
+            const value = children[1].textContent.trim();
+            if (label && value) {
+                const normalized = label.toLowerCase();
+                if (labelMap[normalized]) stats[labelMap[normalized]] = value;
+            }
+        }
+    });
+
+    const rows = Array.from(container.querySelectorAll('tr'));
+    rows.forEach(row => {
+        const cells = Array.from(row.querySelectorAll('td,th'));
+        if (cells.length >= 2) {
+            const label = cells[0].textContent.trim().replace(/[:\s]+$/,'');
+            const value = cells[1].textContent.trim();
+            const normalized = label.toLowerCase();
+            if (labelMap[normalized]) stats[labelMap[normalized]] = value;
+        }
+    });
+
+    return stats;
+}
+
+function buildShipTooltipHtml(stats) {
+    const defenseKeys = ['Absorption Shield', 'ECM', 'Ionized Hull'];
+    const lines = [];
+
+    ['Weapon', 'Energy Damage', 'Kinetic Damage', 'Missile Damage', 'Chemical Damage', 'Hull', 'Range', 'Scanner rating', 'Power rating'].forEach(key => {
+        if (stats[key]) lines.push(`${key}\t${stats[key]}`);
+    });
+
+    const defenseLines = defenseKeys.filter(key => stats[key]).map(key => `${key}\t${stats[key]}`);
+    if (defenseLines.length > 0) {
+        lines.push('Defense Modifier');
+        defenseLines.forEach(line => lines.push(line));
+    }
+
+    return lines.join('\n');
+}
+
+function positionShipTooltip(event, tooltip) {
+    const offset = 16;
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    const rect = tooltip.getBoundingClientRect();
+    let left = event.clientX + offset;
+    let top = event.clientY + offset;
+
+    if (left + rect.width + 8 > viewportWidth) left = Math.max(8, event.clientX - rect.width - offset);
+    if (top + rect.height + 8 > viewportHeight) top = Math.max(8, event.clientY - rect.height - offset);
+
+    tooltip.style.left = left + 'px';
+    tooltip.style.top = top + 'px';
 }
