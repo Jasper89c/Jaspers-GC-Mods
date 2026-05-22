@@ -286,6 +286,7 @@ function extractShipStatsFromDetailDoc(doc) {
         if (match) stats[label] = match[1].trim();
     });
 
+    // Parse generic rows (keeps previous behavior)
     const rows = Array.from(doc.querySelectorAll('tr'));
     rows.forEach(row => {
         const cells = Array.from(row.querySelectorAll('td,th'));
@@ -294,6 +295,37 @@ function extractShipStatsFromDetailDoc(doc) {
         const rawValue = cells[1].textContent.trim();
         const normalized = rawLabel.replace(/\s+/g, ' ').toLowerCase();
         if (labelMap[normalized]) stats[labelMap[normalized]] = rawValue;
+    });
+
+    // Prefer structured tables for Ship Specials and Defense Modifier if present
+    const auxTables = Array.from(doc.querySelectorAll('table.gc-ship-aux-table'));
+    auxTables.forEach(table => {
+        try {
+            const headerTd = table.querySelector('tr.Header td');
+            const headerText = headerTd ? (headerTd.textContent || '').trim().toLowerCase() : '';
+            if (/ship specials?/.test(headerText)) {
+                const specials = [];
+                Array.from(table.querySelectorAll('tr')).forEach(tr => {
+                    // skip header row(s)
+                    if (tr.classList && /header/i.test(tr.className)) return;
+                    const tds = Array.from(tr.querySelectorAll('td'));
+                    if (tds.length === 0) return;
+                    const text = tds.map(td => (td.textContent||'').trim()).join(' ').replace(/\s+/g,' ').trim();
+                    if (text) specials.push(text);
+                });
+                if (specials.length) stats['Ship Specials'] = specials;
+            } else if (/defense modifier/.test(headerText)) {
+                Array.from(table.querySelectorAll('tr')).forEach(tr => {
+                    if (tr.classList && /header/i.test(tr.className)) return;
+                    const tds = Array.from(tr.querySelectorAll('td'));
+                    if (tds.length < 2) return;
+                    const rawLabel = (tds[0].textContent||'').trim().replace(/[:\s]+$/,'');
+                    const rawValue = (tds[1].textContent||'').trim();
+                    const normalized = rawLabel.replace(/\s+/g,' ').toLowerCase();
+                    if (labelMap[normalized]) stats[labelMap[normalized]] = rawValue;
+                });
+            }
+        } catch (e) {}
     });
 
     const dtElements = Array.from(doc.querySelectorAll('dt'));
@@ -305,6 +337,42 @@ function extractShipStatsFromDetailDoc(doc) {
         const normalized = rawLabel.replace(/\s+/g, ' ').toLowerCase();
         if (labelMap[normalized]) stats[labelMap[normalized]] = rawValue;
     });
+
+    // If structured aux tables didn't provide Ship Specials, fall back to a broader search.
+    if (!stats['Ship Specials']) {
+        const specials = [];
+        const possibleHeaders = Array.from(doc.querySelectorAll('h1,h2,h3,h4,h5,legend,th,div,span'));
+        possibleHeaders.forEach(h => {
+            try {
+                if (!h.textContent) return;
+                if (/ship specials?/i.test(h.textContent)) {
+                    // gather following sibling nodes that contain text
+                    let node = h.nextElementSibling;
+                    let guard = 0;
+                    while (node && guard < 30) {
+                        const t = (node.textContent || '').trim();
+                        if (t) {
+                            // split by lines and push
+                            t.split(/\n+/).map(s => s.trim()).forEach(s => { if (s) specials.push(s); });
+                        }
+                        // stop if next header encountered
+                        if (/^H[1-6]$/i.test(node.tagName)) break;
+                        node = node.nextElementSibling;
+                        guard++;
+                    }
+                    // also check the parent container for <p> items
+                    const parent = h.parentElement;
+                    if (specials.length === 0 && parent) {
+                        parent.querySelectorAll && parent.querySelectorAll('p,li,dd').forEach(el => {
+                            const t = (el.textContent || '').trim();
+                            if (t) specials.push(t);
+                        });
+                    }
+                }
+            } catch (e) {}
+        });
+        if (specials.length) stats['Ship Specials'] = specials;
+    }
 
     return stats;
 }
@@ -425,7 +493,16 @@ function buildShipTooltipHtml(stats) {
 
     const buildSection = (title, keys) => {
         const rows = keys.filter(key => stats[key]).map(key => {
-            return `<div class="gcc-tooltip-row"><span class="gcc-tooltip-label">${key}</span><span class="gcc-tooltip-value">${stats[key]}</span></div>`;
+            const val = stats[key];
+            // color defense modifiers
+            let valueHtml = `<span class=\"gcc-tooltip-value\">${val}</span>`;
+            if (['Absorption Shield','ECM','Ionized Hull','Energy Shield'].includes(key)) {
+                const negative = /-\s*\d/.test(val);
+                const positive = /\+\s*\d/.test(val);
+                const color = negative ? '#ff6b6b' : (positive ? '#7fe08a' : '#f1eee8');
+                valueHtml = `<span class=\"gcc-tooltip-value\" style=\"color:${color}\">${val}</span>`;
+            }
+            return `<div class="gcc-tooltip-row"><span class="gcc-tooltip-label">${key}</span>${valueHtml}</div>`;
         });
         if (!rows.length) return '';
         return `<div class="gcc-tooltip-section"><div class="gcc-tooltip-header">${title}</div>${rows.join('')}</div>`;
@@ -435,6 +512,12 @@ function buildShipTooltipHtml(stats) {
     html += buildSection('Weapon', weaponKeys);
     html += buildSection('Defense Mods', defenseKeys);
     html += buildSection('Other Stats', otherKeys);
+
+    // Ship Specials section (array of freeform strings)
+    if (stats['Ship Specials'] && Array.isArray(stats['Ship Specials']) && stats['Ship Specials'].length) {
+        const specialsHtml = stats['Ship Specials'].map(s => `<div class="gcc-tooltip-row"><span class="gcc-tooltip-label">${s}</span></div>`).join('');
+        html += `<div class="gcc-tooltip-section"><div class="gcc-tooltip-header">Ship Specials</div>${specialsHtml}</div>`;
+    }
 
     if (!html) {
         html = '<div class="gcc-tooltip-row"><span class="gcc-tooltip-label">No stats available</span></div>';
