@@ -189,7 +189,8 @@ function attachShipHoverTooltips() {
         const detailUrl = shipHref ? new URL(shipHref, window.location.href).href : null;
 
         const showTooltip = (event, content) => {
-            tooltip.innerHTML = content;
+            const body = tooltip.querySelector('#gcc-ship-tooltip-body');
+            if (body) body.innerHTML = content;
             tooltip.style.display = 'block';
             positionShipTooltip(event, tooltip);
         };
@@ -314,7 +315,8 @@ function createShipTooltip() {
 
     tooltip = document.createElement('div');
     tooltip.id = 'gcc-ship-tooltip';
-    tooltip.style.cssText = 'position:fixed; z-index:100000; pointer-events:none; display:none; max-width:320px; background:rgba(18,18,18,0.95); border:1px solid #555; border-radius:10px; box-shadow:0 14px 32px rgba(0,0,0,0.45); padding:12px 14px; color:#f5f5f5; font-size:12px; line-height:1.4; white-space:pre-wrap;';
+    tooltip.style.cssText = "position:fixed; z-index:100000; pointer-events:none; display:none; max-width:320px; background:rgba(11,29,66,0.98); border:1px solid rgba(148,173,225,0.28); border-radius:12px; box-shadow:0 14px 32px rgba(0,0,0,0.55); padding:12px 14px; color:#f0e6c8; font-size:13px; line-height:1.5; white-space:normal; font-family:system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;";
+    tooltip.innerHTML = '<style id="gcc-ship-tooltip-style">.gcc-tooltip-header{font-size:13px;font-weight:800;color:#e8b563;margin:12px 0 6px;padding:6px 8px;background:rgba(232,181,99,0.08);border:1px solid rgba(232,181,99,0.18);border-radius:6px;text-transform:uppercase;letter-spacing:0.1em;}.gcc-tooltip-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:4px 0;color:#f1eee8;border-bottom:1px solid rgba(147,169,222,0.12);}.gcc-tooltip-row:last-child{border-bottom:none;}.gcc-tooltip-label{flex:1;color:#f1eee8;opacity:0.95;}.gcc-tooltip-value{margin-left:8px;font-weight:700;color:#f1eee8;white-space:nowrap;}.gcc-tooltip-section{margin-bottom:10px;}.gcc-tooltip-section:first-child{margin-top:4px;}</style><div id="gcc-ship-tooltip-body" class="gcc-ship-tooltip-body"></div>';
     document.body.appendChild(tooltip);
     return tooltip;
 }
@@ -417,20 +419,28 @@ function extractShipStats(container) {
 }
 
 function buildShipTooltipHtml(stats) {
-    const defenseKeys = ['Absorption Shield', 'ECM', 'Ionized Hull'];
-    const lines = [];
+    const weaponKeys = ['Weapon', 'Energy Damage', 'Kinetic Damage', 'Missile Damage', 'Chemical Damage'];
+    const defenseKeys = ['Energy Shield', 'Absorption Shield', 'ECM', 'Ionized Hull'];
+    const otherKeys = ['Hull', 'Range', 'Scanner rating', 'Power rating'];
 
-    ['Weapon', 'Energy Damage', 'Kinetic Damage', 'Missile Damage', 'Chemical Damage', 'Hull', 'Range', 'Scanner rating', 'Power rating'].forEach(key => {
-        if (stats[key]) lines.push(`${key}\t${stats[key]}`);
-    });
+    const buildSection = (title, keys) => {
+        const rows = keys.filter(key => stats[key]).map(key => {
+            return `<div class="gcc-tooltip-row"><span class="gcc-tooltip-label">${key}</span><span class="gcc-tooltip-value">${stats[key]}</span></div>`;
+        });
+        if (!rows.length) return '';
+        return `<div class="gcc-tooltip-section"><div class="gcc-tooltip-header">${title}</div>${rows.join('')}</div>`;
+    };
 
-    const defenseLines = defenseKeys.filter(key => stats[key]).map(key => `${key}\t${stats[key]}`);
-    if (defenseLines.length > 0) {
-        lines.push('Defense Modifier');
-        defenseLines.forEach(line => lines.push(line));
+    let html = '';
+    html += buildSection('Weapon', weaponKeys);
+    html += buildSection('Defense Mods', defenseKeys);
+    html += buildSection('Other Stats', otherKeys);
+
+    if (!html) {
+        html = '<div class="gcc-tooltip-row"><span class="gcc-tooltip-label">No stats available</span></div>';
     }
 
-    return lines.join('\n');
+    return html;
 }
 
 function positionShipTooltip(event, tooltip) {
