@@ -174,15 +174,18 @@ function setupLogic(container, presets, sid) {
     // 5. Ship hover tooltips
     attachShipHoverTooltips();
 
-    // 6. Add disband quick-action cells
+    // 6. Add disband quick-action cells on the disband page only
     try {
-        addDisbandQuickCells();
-        setTimeout(addDisbandQuickCells, 500);
-        setTimeout(addDisbandQuickCells, 1000);
+        if (window.location.href.includes('f=com_disband')) {
+            addDisbandQuickCells();
+            setTimeout(addDisbandQuickCells, 500);
+            setTimeout(addDisbandQuickCells, 1000);
+        }
     } catch (e) {}
 }
 
 function addDisbandQuickCells() {
+    if (!window.location.href.includes('f=com_disband')) return;
     const tables = Array.from(document.querySelectorAll('table.Default'));
     if (!tables.length) return;
     tables.forEach(table => {
