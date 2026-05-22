@@ -56,6 +56,18 @@ A small userscript / content script for the GC mod site that adds helper UI, qui
   - `All`
 - These compute the value from the `In Fleet` cell and fill the `Disband` input automatically.
 
+### 9. Quick Links
+- added 2 links to all navigation for battle and eco sims
+
+### 10. New Ship Builder Controls
+
+- Added `+5` and `+10` increment buttons to ship builder rows.
+- Buttons now add `Rate × 5` or `Rate × 10` to the selected ship input.
+- Styled batch buttons to match site UI:
+  - green background `#145A32`
+  - white text
+  - `11.8px Arial, Helvetica, sans-serif` font
+
 ## Shortcuts & Controls
 
 ### Mouse controls
