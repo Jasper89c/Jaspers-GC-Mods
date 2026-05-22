@@ -1,42 +1,108 @@
-# GC Helper Tool 🚀
+# GC Helper Tool
 
-A specialized utility for Galactic Conquest players to automate repetitive tasks like ship building and colony clustering.
+A small userscript / content script for the GC mod site that adds helper UI, quick actions, and live ship stats.
 
-## ✨ Features
+## Features
 
-- **Draggable UI Overlay:** A sleek, dark-themed panel that remembers its position on your screen.
-- **Global Colony Clustering:** Upgrade your bottom 5 colonies into Level 1, 2, or 3 clusters from **any page** via background POST requests.
-- **Ship Construction Presets:**
-  - **Save:** Configure your build on the ship page and **Right-Click** a preset button (P1-P5) to save.
-  - **Execute:** Click a button to build the saved fleet instantly.
-  - **Smart Tooltips:** Hover over a button to see exactly what ships are stored in that preset.
-- **Session Auto-Sync:** Automatically detects your Session ID (SID) to ensure links never break.
-- **Navigation Shortcuts:** Quick access to Command, Build, Fleet Management, and Rankings.
+### 1. Auto-Explore
+- Automatically clicks the in-game `Explore` button when the page loads if it can be found.
+- Helps skip the manual exploration step.
 
-## 🛠 Installation
+### 2. Floating Helper Panel
+- A draggable top-right helper panel.
+- Includes:
+  - `Refresh` button
+  - `SHIP PRESETS`
+  - `COLONY CLUSTER`
+  - quick page shortcuts
 
-1. **Clone/Download** this repository to your local machine.
-2. Open Google Chrome and go to `chrome://extensions/`.
-3. Enable **Developer mode** using the toggle in the top-right corner.
-4. Click **Load unpacked**.
-5. Select the folder containing these files.
-6. Refresh your Galactic Conquest game tab.
+### 3. Ship Presets
+- Supports up to 5 preset buttons: `P1` through `P5`.
+- Left-click a preset to auto-fill build inputs and submit a build request.
+- Right-click a preset to save the current ship quantities into that preset.
 
-## 🎮 How to Use
+### 4. Global Colony Cluster
+- Three quick cluster upgrade buttons:
+  - `Upgrade Lvl 1`
+  - `Upgrade Lvl 2`
+  - `Upgrade Lvl 3`
+- Each sends a cluster upgrade request using the current `sid`.
 
-### Clustering Colonies
-Click **Upgrade Lvl 1, 2, or 3**. The status indicator will show `⏳ Upgrading...`. Once finished, the tool will display a success message and refresh the page to update your stats.
+### 5. Link Sync
+- The panel footer links are rewritten to include the session ID (`sid`).
+- Links included:
+  - `Cmd`
+  - `Build`
+  - `Fleet`
+  - `Rank`
 
-### Managing Presets
-1. Navigate to the **Build Ships** page.
-2. Enter the desired quantities for your fleet.
-3. **Right-Click** a preset button (e.g., `P1`). The button will turn **Green** if successful.
-4. From any page, **Left-Click** that button to build that exact fleet configuration again.
+### 6. Drag and Drop Panel
+- The helper panel can be dragged around the screen.
+- Position is saved automatically.
 
-## 📝 Technical Notes
-- **Language:** JavaScript (Vanilla)
-- **Permissions:** Uses `chrome.storage.local` to persist UI position and ship presets across sessions.
-- **Compatibility:** Built for Chrome Manifest V3.
+### 7. Ship Hover Tooltips
+- Hover over ship build links to display live tooltip stats.
+- The tooltip includes:
+  - Weapon stats
+  - Defense mods
+  - Other stats
+  - Ship specials
+- Tooltip content is fetched from the ship detail page when available.
 
----
-*Disclaimer: This tool is a third-party helper. Use in accordance with the game's Terms of Service.*
+### 8. Disband Table Quick Actions
+- Adds three clickable quick-action cells to each disband row:
+  - `10%`
+  - `50%`
+  - `All`
+- These compute the value from the `In Fleet` cell and fill the `Disband` input automatically.
+
+## Shortcuts & Controls
+
+### Mouse controls
+- `Right-click` on a preset button: save current ship values to that preset.
+- `Left-click` on a preset button: apply saved preset to the ship build form.
+- `Drag` the top panel title bar to move the panel.
+
+### Buttons
+- `↻ Refresh` — reloads the page.
+- `P1...P5` — preset quick-access buttons.
+- `⏫ Upgrade Lvl X` — perform a colony cluster upgrade.
+- `Cmd`, `Build`, `Fleet`, `Rank` — site shortcuts with session sync.
+
+## Installation
+
+1. Add `content.js` as a content script in your extension or userscript manager.
+2. Ensure it runs on the GC mod site pages where ship building / disbanding occurs.
+3. Reload the site.
+
+## Usage
+
+1. Open the GC mod page.
+2. Use the helper panel for quick actions.
+3. Hover ship names to see tooltip stats.
+4. On the disband table, click `10%`, `50%`, or `All` to fill the disband amount automatically.
+
+## Notes
+
+- The script uses the page `sid` to synchronize actions.
+- Tooltip data is cached per ship detail URL.
+- The disband quick cells rely on the table structure and the `input[name^="dis_"]` entries.
+
+## Troubleshooting
+
+- If tooltips do not appear, reload the page or verify the content script is enabled.
+- If the disband table buttons do not show, check that the table class is `Default` and the disband inputs use `name="dis_*"`.
+- If preset saving fails, ensure there are ship quantity inputs visible on the page.
+
+## Example Markup / Usage
+```html
+<table class="Default">
+  <tr class="Header">
+    <td>Name</td>
+    <td>Class</td>
+    <td>Disband</td>
+    <td>In Fleet</td>
+    ...
+  </tr>
+  ...
+</table>
