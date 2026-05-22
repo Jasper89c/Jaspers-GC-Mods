@@ -71,9 +71,11 @@ A small userscript / content script for the GC mod site that adds helper UI, qui
 
 ## Installation
 
-1. Add `content.js` as a content script in your extension or userscript manager.
-2. Ensure it runs on the GC mod site pages where ship building / disbanding occurs.
-3. Reload the site.
+1. Navigate to chrome://extensions/
+2. Eanble Devoloper mode in the top right corner.
+3. Hit load unpacked
+4. Load the folder that you downloaded.
+5. Head back to the game and refresh.
 
 ## Usage
 
