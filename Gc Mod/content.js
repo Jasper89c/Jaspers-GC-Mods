@@ -22,7 +22,7 @@ chrome.storage.local.get(['panelPos', 'presets', 'storedSid'], (res) => {
 
     const container = document.createElement('div');
     container.id = 'gcc-preset-panel';
-    container.style.cssText = `position:fixed; top:${pos.top}; left:${pos.left}; right:${pos.right}; width:190px; background:#1a1a1a; border:2px solid #444; z-index:99999; border-radius:8px; overflow:hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.5); font-family: sans-serif; color: white;`;
+    container.style.cssText = `position:fixed; top:${pos.top}; left:${pos.left}; right:${pos.right}; width:190px; background:#1a1a1a; border:2px solid #444; z-index:99999; border-radius:8px; overflow:hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.5); font-family: Arial, sans-serif; color: white;`;
     
     container.innerHTML = `
         <div id="gcc-handle" style="background:#333; padding:8px; cursor:move; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #444; user-select:none;">
@@ -182,6 +182,12 @@ function setupLogic(container, presets, sid) {
             setTimeout(addDisbandQuickCells, 1000);
         }
     } catch (e) {}
+
+    // 7. Add Simulations links to the bottom of the left nav bar
+    try {
+        addSimulationsLinks();
+        setTimeout(addSimulationsLinks, 500);
+    } catch (e) {}
 }
 
 function addDisbandQuickCells() {
@@ -264,6 +270,52 @@ function addDisbandQuickCells() {
             disTd.dataset.gccQuickCellsAdded = '1';
         });
     });
+}
+
+function addSimulationsLinks() {
+    const container = document.querySelector('.icon-bar2');
+    if (!container) return;
+    if (document.getElementById('gcc-sim-links')) return;
+
+    const wrapper = document.createElement('div');
+    wrapper.id = 'gcc-sim-links';
+    wrapper.style.display = 'flex';
+    wrapper.style.flexWrap = 'wrap';
+    wrapper.style.alignItems = 'center';
+    wrapper.style.gap = '8px';
+    wrapper.style.marginTop = '12px';
+    wrapper.style.paddingTop = '10px';
+    wrapper.style.borderTop = '1px solid var(--border)';
+
+    const title = document.createElement('span');
+    title.textContent = 'Simulations';
+    title.style.color = 'var(--accent)';
+    title.style.fontFamily = "'IBM Plex Mono', ui-monospace, 'SF Mono', Consolas, monospace";
+    title.style.fontWeight = 'bold';
+    title.style.lineHeight = '1.2';
+    wrapper.appendChild(title);
+
+    const links = [
+        { text: 'Battle Sim', href: 'https://augury.drlat.dev/sim' },
+        { text: 'Eco Sim', href: 'https://augury.drlat.dev/eco' }
+    ];
+
+    links.forEach(linkData => {
+        const a = document.createElement('a');
+        a.href = linkData.href;
+        a.target = '_blank';
+        a.rel = 'noreferrer noopener';
+        a.textContent = linkData.text;
+        a.style.color = 'var(--text-primary)';
+        a.style.textDecoration = 'none';
+        a.style.fontWeight = 'normal';
+        a.style.lineHeight = '1.2';
+        a.addEventListener('mouseenter', () => a.style.color = '#f2c57a');
+        a.addEventListener('mouseleave', () => a.style.color = 'var(--text-primary)');
+        wrapper.appendChild(a);
+    });
+
+    container.appendChild(wrapper);
 }
 
 const shipStatCache = {};
@@ -551,8 +603,8 @@ function createShipTooltip() {
 
     tooltip = document.createElement('div');
     tooltip.id = 'gcc-ship-tooltip';
-    tooltip.style.cssText = "position:fixed; z-index:100000; pointer-events:none; display:none; max-width:320px; background:rgba(11,29,66,0.98); border:1px solid rgba(148,173,225,0.28); border-radius:12px; box-shadow:0 14px 32px rgba(0,0,0,0.55); padding:12px 14px; color:#f0e6c8; font-size:13px; line-height:1.5; white-space:normal; font-family:system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;";
-    tooltip.innerHTML = '<style id="gcc-ship-tooltip-style">.gcc-tooltip-header{font-size:13px;font-weight:800;color:#e8b563;margin:12px 0 6px;padding:6px 8px;background:rgba(232,181,99,0.08);border:1px solid rgba(232,181,99,0.18);border-radius:6px;text-transform:uppercase;letter-spacing:0.1em;}.gcc-tooltip-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:4px 0;color:#f1eee8;border-bottom:1px solid rgba(147,169,222,0.12);}.gcc-tooltip-row:last-child{border-bottom:none;}.gcc-tooltip-label{flex:1;color:#f1eee8;opacity:0.95;}.gcc-tooltip-value{margin-left:8px;font-weight:700;color:#f1eee8;white-space:nowrap;}.gcc-tooltip-section{margin-bottom:10px;}.gcc-tooltip-section:first-child{margin-top:4px;}</style><div id="gcc-ship-tooltip-body" class="gcc-ship-tooltip-body"></div>';
+    tooltip.style.cssText = "position:fixed; z-index:100000; pointer-events:none; display:none; max-width:320px; background:var(--bg-overlay); border:1px solid var(--border); border-radius:12px; box-shadow:var(--shadow-lg); padding:12px 14px; color:var(--text-primary); font-size:13px; line-height:1.5; white-space:normal; font-family: Arial, sans-serif;";
+    tooltip.innerHTML = '<style id="gcc-ship-tooltip-style">.gcc-tooltip-header{font-size:13px;font-weight:800;color:var(--accent);margin:12px 0 6px;padding:6px 8px;background:rgba(232,181,99,0.08);border:1px solid rgba(232,181,99,0.18);border-radius:6px;text-transform:uppercase;letter-spacing:0.1em;}.gcc-tooltip-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:4px 0;color:var(--text-primary);border-bottom:1px solid rgba(147,169,222,0.12);}.gcc-tooltip-row:last-child{border-bottom:none;}.gcc-tooltip-label{flex:1;color:var(--text-primary);opacity:0.95;}.gcc-tooltip-value{margin-left:8px;font-weight:700;color:var(--text-primary);white-space:nowrap;}.gcc-tooltip-section{margin-bottom:10px;}.gcc-tooltip-section:first-child{margin-top:4px;}</style><div id="gcc-ship-tooltip-body" class="gcc-ship-tooltip-body"></div>';
     document.body.appendChild(tooltip);
     return tooltip;
 }
@@ -715,8 +767,8 @@ function ensureDisbandStyles() {
     s.id = 'gcc-disband-buttons-style';
     s.textContent = `
     .gcc-disband-buttons { display: inline-flex !important; gap: 6px !important; margin-left: 6px !important; align-items: center !important; }
-    .gcc-disband-buttons button { background: #e8b563 !important; border: none !important; color: #08203a !important; padding: 4px 8px !important; border-radius: 4px !important; cursor: pointer !important; font-size: 12px !important; font-weight: 700 !important; min-width: 34px !important; line-height: 1 !important; }
-    .gcc-disband-buttons button:hover { filter: brightness(0.95); }
+    .gcc-disband-buttons button { background: var(--accent) !important; border: none !important; color: var(--text-inverse) !important; padding: 4px 8px !important; border-radius: 4px !important; cursor: pointer !important; font-size: 12px !important; font-weight: 700 !important; min-width: 34px !important; line-height: 1 !important; }
+    .gcc-disband-buttons button:hover { background: var(--accent-hover) !important; }
     `;
     document.head.appendChild(s);
 }
