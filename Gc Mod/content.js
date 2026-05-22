@@ -173,6 +173,94 @@ function setupLogic(container, presets, sid) {
 
     // 5. Ship hover tooltips
     attachShipHoverTooltips();
+
+    // 6. Add disband quick-action cells
+    try {
+        addDisbandQuickCells();
+        setTimeout(addDisbandQuickCells, 500);
+        setTimeout(addDisbandQuickCells, 1000);
+    } catch (e) {}
+}
+
+function addDisbandQuickCells() {
+    const tables = Array.from(document.querySelectorAll('table.Default'));
+    if (!tables.length) return;
+    tables.forEach(table => {
+        // ensure table has a header row
+        const header = table.querySelector('tr.Header');
+        if (!header) return;
+
+        // Clean previously inserted quick-header cells and insert proper ordered header cells
+        Array.from(header.querySelectorAll('td')).forEach(td => {
+            const t = (td.textContent || '').trim();
+            if (t === '10%' || t === '50%' || t === 'All') td.remove();
+        });
+        const headerTds = Array.from(header.querySelectorAll('td'));
+        let disIdx = headerTds.findIndex(td => /disband/i.test(td.textContent || ''));
+        if (disIdx === -1) disIdx = 2; // fallback
+        const disHeaderRef = headerTds[disIdx];
+        if (disHeaderRef) {
+            const frag = document.createDocumentFragment();
+            ['10%','50%','All'].forEach(label => {
+                const td = document.createElement('td');
+                td.style.textAlign = 'center';
+                td.style.verticalAlign = 'middle';
+                td.textContent = label;
+                frag.appendChild(td);
+            });
+            header.insertBefore(frag, disHeaderRef);
+        }
+
+        // For each row, remove stray quick cells immediately before Disband TD, then insert properly ordered cells
+        const rows = Array.from(table.querySelectorAll('tr')).filter(r => !/header/i.test(r.className || ''));
+        rows.forEach(row => {
+            const disInput = row.querySelector('input[name^="dis_"]');
+            if (!disInput) return;
+            const disTd = disInput.closest('td');
+            if (!disTd) return;
+
+            // Remove any existing quick cells directly to the left of disTd
+            let prev = disTd.previousElementSibling;
+            while (prev && ['10%','50%','All'].includes((prev.textContent||'').trim())) {
+                const rem = prev;
+                prev = prev.previousElementSibling;
+                rem.remove();
+            }
+
+            // Insert fragment of three TDs before disTd
+            const frag = document.createDocumentFragment();
+            ['10%','50%','All'].forEach(label => {
+                const td = document.createElement('td');
+                td.style.textAlign = 'center';
+                const a = document.createElement('a');
+                a.href = 'javascript:void(0);';
+                a.textContent = label;
+                a.style.display = 'inline-block';
+                a.style.padding = '4px 8px';
+                a.style.background = '#e8b563';
+                a.style.color = '#08203a';
+                a.style.borderRadius = '4px';
+                a.style.fontWeight = '700';
+                const pct = label === 'All' ? 1 : (parseInt(label,10) / 100);
+                a.addEventListener('click', () => {
+                    const inFleetTd = disTd.nextElementSibling;
+                    if (!inFleetTd) return;
+                    const raw = (inFleetTd.textContent || '').replace(/[^0-9,.-]/g,'').replace(/,/g,'').trim();
+                    let n = parseInt(raw,10);
+                    if (isNaN(n) || n < 0) n = 0;
+                    const val = pct === 1 ? n : Math.floor(n * pct);
+                    disInput.value = val;
+                    disInput.dispatchEvent(new Event('input', { bubbles: true }));
+                    disInput.dispatchEvent(new Event('change', { bubbles: true }));
+                });
+                td.appendChild(a);
+                frag.appendChild(td);
+            });
+            row.insertBefore(frag, disTd);
+
+            disTd.dataset.gccQuickCellsAdded = '1';
+        });
+    });
 }
 
 const shipStatCache = {};
@@ -240,6 +328,84 @@ async function loadShipStatsFromUrl(url) {
     } catch (e) {
         return null;
     }
+
+    // 4. Disband quick buttons (10% / 50% / All)
+    try {
+        addDisbandQuickButtons();
+        // ensure styles are present and retry a few times in case table loads late
+        setTimeout(addDisbandQuickButtons, 500);
+        setTimeout(addDisbandQuickButtons, 1000);
+        setTimeout(addDisbandQuickButtons, 2000);
+        // observe for DOM changes to re-run when table is updated
+        const tblObserver = new MutationObserver(() => {
+            addDisbandQuickButtons();
+        });
+        tblObserver.observe(document.body, { childList: true, subtree: true });
+    } catch (e) {}
+}
+
+// Inject quick-disband buttons into each row's Disband cell
+function addDisbandQuickButtons() {
+    ensureDisbandStyles();
+    const disInputs = Array.from(document.querySelectorAll('input[name^="dis_"]'));
+    if (!disInputs.length) return;
+    disInputs.forEach(disInput => {
+        if (disInput.dataset.gccButtonsAdded) return;
+        const tr = disInput.closest('tr');
+        if (!tr) return;
+
+        // Prefer the 4th cell (index 3) for In Fleet
+        const cells = Array.from(tr.querySelectorAll('td'));
+        let inFleetCell = null;
+        if (cells.length >= 4) inFleetCell = cells[3];
+        else {
+            // fallback: find the first right-aligned numeric cell not the disband cell
+            inFleetCell = cells.find(td => td !== disInput.parentElement && /\d[\d,]*\d/.test(td.textContent || ''));
+        }
+        if (!inFleetCell) return;
+
+        const container = document.createElement('div');
+        container.style.setProperty('display','inline-flex','important');
+        container.style.setProperty('flex-wrap','wrap','important');
+        container.style.setProperty('gap','6px','important');
+        container.style.setProperty('justify-content','center','important');
+        container.style.setProperty('margin-left','6px','important');
+        container.style.setProperty('align-items','center','important');
+
+        const options = [ {label:'10%', pct:0.10}, {label:'50%', pct:0.50}, {label:'All', pct:1} ];
+        options.forEach(opt => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.innerText = opt.label;
+            btn.title = `Set to ${opt.label}`;
+            btn.style.cssText = 'background:#e8b563;border:none;color:#08203a;padding:4px 8px;border-radius:4px;cursor:pointer;font-size:12px;font-weight:700;';
+            btn.style.setProperty('min-width','34px','important');
+            btn.style.setProperty('line-height','1','important');
+            btn.addEventListener('click', () => {
+                const raw = (inFleetCell.textContent || '').replace(/[^0-9,.-]/g,'').replace(/,/g,'').trim();
+                let n = parseInt(raw,10);
+                if (isNaN(n) || n < 0) n = 0;
+                let val = 0;
+                if (opt.pct === 1) val = n;
+                else val = Math.floor(n * opt.pct);
+                disInput.value = val;
+                disInput.dispatchEvent(new Event('input', { bubbles: true }));
+                disInput.dispatchEvent(new Event('change', { bubbles: true }));
+            });
+            container.appendChild(btn);
+        });
+
+        // append UI to the Disband cell (after the input)
+        // ensure parent cell can contain our buttons
+        try {
+            disInput.parentElement.style.setProperty('display','inline-flex','important');
+            disInput.parentElement.style.setProperty('white-space','nowrap','important');
+            disInput.parentElement.style.setProperty('align-items','center','important');
+        } catch(e){}
+        // insert container after the input so it remains visible even in tight cells
+        disInput.insertAdjacentElement('afterend', container);
+        disInput.dataset.gccButtonsAdded = '1';
+    });
 }
 
 function createLabelMap() {
@@ -306,11 +472,10 @@ function extractShipStatsFromDetailDoc(doc) {
             if (/ship specials?/.test(headerText)) {
                 const specials = [];
                 Array.from(table.querySelectorAll('tr')).forEach(tr => {
-                    // skip header row(s)
                     if (tr.classList && /header/i.test(tr.className)) return;
                     const tds = Array.from(tr.querySelectorAll('td'));
                     if (tds.length === 0) return;
-                    const text = tds.map(td => (td.textContent||'').trim()).join(' ').replace(/\s+/g,' ').trim();
+                    const text = tds.map(td => (td.textContent || '').trim()).join(' ').replace(/\s+/g, ' ').trim();
                     if (text) specials.push(text);
                 });
                 if (specials.length) stats['Ship Specials'] = specials;
@@ -319,9 +484,9 @@ function extractShipStatsFromDetailDoc(doc) {
                     if (tr.classList && /header/i.test(tr.className)) return;
                     const tds = Array.from(tr.querySelectorAll('td'));
                     if (tds.length < 2) return;
-                    const rawLabel = (tds[0].textContent||'').trim().replace(/[:\s]+$/,'');
-                    const rawValue = (tds[1].textContent||'').trim();
-                    const normalized = rawLabel.replace(/\s+/g,' ').toLowerCase();
+                    const rawLabel = (tds[0].textContent || '').trim().replace(/[:\s]+$/, '');
+                    const rawValue = (tds[1].textContent || '').trim();
+                    const normalized = rawLabel.replace(/\s+/g, ' ').toLowerCase();
                     if (labelMap[normalized]) stats[labelMap[normalized]] = rawValue;
                 });
             }
@@ -539,4 +704,16 @@ function positionShipTooltip(event, tooltip) {
 
     tooltip.style.left = left + 'px';
     tooltip.style.top = top + 'px';
+}
+
+function ensureDisbandStyles() {
+    if (document.getElementById('gcc-disband-buttons-style')) return;
+    const s = document.createElement('style');
+    s.id = 'gcc-disband-buttons-style';
+    s.textContent = `
+    .gcc-disband-buttons { display: inline-flex !important; gap: 6px !important; margin-left: 6px !important; align-items: center !important; }
+    .gcc-disband-buttons button { background: #e8b563 !important; border: none !important; color: #08203a !important; padding: 4px 8px !important; border-radius: 4px !important; cursor: pointer !important; font-size: 12px !important; font-weight: 700 !important; min-width: 34px !important; line-height: 1 !important; }
+    .gcc-disband-buttons button:hover { filter: brightness(0.95); }
+    `;
+    document.head.appendChild(s);
 }
