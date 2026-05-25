@@ -4,9 +4,10 @@ A small userscript / content script for the GC mod site that adds helper UI, qui
 
 ## Features
 
-### 1. Auto-Explore
+### 1. Auto-Explore & auto-continue
 - Automatically clicks the in-game `Explore` button when the page loads if it can be found.
 - Helps skip the manual exploration step.
+- Automatically clicks the in-game `continue` button when the page loads if it can be found.(only when clustering)
 
 ### 2. Floating Helper Panel
 - A draggable top-right helper panel.
@@ -22,10 +23,14 @@ A small userscript / content script for the GC mod site that adds helper UI, qui
 - Right-click a preset to save the current ship quantities into that preset.
 
 ### 4. Global Colony Cluster
-- Three quick cluster upgrade buttons:
+- quick cluster upgrade buttons:
   - `Upgrade Lvl 1`
   - `Upgrade Lvl 2`
   - `Upgrade Lvl 3`
+  - `similare c.2`
+  - `similare c.3`
+  - `similare c.4`
+  - `similare c.5`
 - Each sends a cluster upgrade request using the current `sid`.
 
 ### 5. Link Sync
@@ -57,7 +62,7 @@ A small userscript / content script for the GC mod site that adds helper UI, qui
 - These compute the value from the `In Fleet` cell and fill the `Disband` input automatically.
 
 ### 9. Quick Links
-- added 2 links to all navigation for battle and eco sims
+- added links to all navigation for battle and eco sims
 
 ### 10. New Ship Builder Controls
 
@@ -67,6 +72,10 @@ A small userscript / content script for the GC mod site that adds helper UI, qui
   - green background `#145A32`
   - white text
   - `11.8px Arial, Helvetica, sans-serif` font
+
+### 11. Quick Assimilate
+- assimilate collective planets from the manage colonies screen.
+- enable/disable this feature in the helper panel if you are not playing collective.
 
 ## Shortcuts & Controls
 
