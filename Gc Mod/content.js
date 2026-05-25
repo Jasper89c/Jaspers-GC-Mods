@@ -17,7 +17,7 @@ function autoClickContinue() {
 }
 
 // === 2. MAIN EXTENSION PANEL LOGIC ===
-chrome.storage.local.get(['panelPos', 'presets', 'storedSid', 'assimEnabled', 'clusterCollapsed', 'similareCollapsed'], (res) => {
+chrome.storage.local.get(['panelPos', 'presets', 'storedSid', 'assimEnabled', 'clusterCollapsed', 'similareCollapsed', 'viralCollapsed'], (res) => {
     const pos = res.panelPos || { top: '20px', left: 'auto', right: '20px' };
     const savedPresets = res.presets || {};
 
@@ -41,8 +41,9 @@ chrome.storage.local.get(['panelPos', 'presets', 'storedSid', 'assimEnabled', 'c
         </div>
 
         <div style="border-bottom:1px solid #333;">
+        <div style="font-size:10px; color:#aaa; margin-bottom:5px; font-weight:bold; letter-spacing:0.5px; padding:8px;">CLUSTERING</div>
             <div id="gcc-cluster-header" style="padding:8px; background:#222; cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
-                <div style="font-size:10px; color:#ff9800; font-weight:bold; letter-spacing:0.5px;">COLONY CLUSTER</div>
+                <div style="font-size:10px; color:#ff9800; font-weight:bold; letter-spacing:0.5px;">Terran/Miner/Guard/Mara</div>
                 <span id="gcc-cluster-arrow" style="font-size:10px; color:#aaa;">▾</span>
             </div>
             <div id="gcc-cluster-body" style="padding:0 8px 8px; background:#222;">
@@ -54,15 +55,30 @@ chrome.storage.local.get(['panelPos', 'presets', 'storedSid', 'assimEnabled', 'c
                 <div id="gcc-cluster-status" style="font-size:9px; color:#888; text-align:center; margin-top:4px; height:10px;"></div>
             </div>
             <div id="gcc-similare-header" style="padding:8px; background:#222; cursor:pointer; display:flex; justify-content:space-between; align-items:center; border-top:1px solid #333;">
-                <div style="font-size:10px; color:#81d4fa; font-weight:bold; letter-spacing:0.5px;">SIMILARE</div>
+                <div style="font-size:10px; color:#ff9800; font-weight:bold; letter-spacing:0.5px;">Collective</div>
                 <span id="gcc-similare-arrow" style="font-size:10px; color:#aaa;">▾</span>
             </div>
             <div id="gcc-similare-body" style="padding:0 8px 8px; background:#222;">
                 <div style="display:flex; flex-direction:column; gap:4px; padding-top:6px;">
                     <button class="gcc-global-cluster" data-tid="1" style="background:#444; color:white; border:none; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade C.2</button>
                     <button class="gcc-global-cluster" data-tid="2" style="background:#444; color:white; border:none; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade C.3</button>
-                    <button class="gcc-global-cluster" data-tid="3" style="background:#444; color:white; border:none; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade C.4</button>
+                    <button class="gcc-global-cluster" data-tid="3" style="background:#444; color:white; border:none; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade C.4</button>                    
                     <button class="gcc-global-cluster" data-tid="7" style="background:#444; color:white; border:none; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade C.5</button>
+                    <button class="gcc-global-cluster" data-tid="5" style="background:#444; color:white; border:none; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade C2</button>
+                    <button class="gcc-global-cluster" data-tid="6" style="background:#444; color:white; border:none; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade C3</button>
+                </div>
+            </div>
+            <div id="gcc-viral-header" style="padding:8px; background:#222; cursor:pointer; display:flex; justify-content:space-between; align-items:center; border-top:1px solid #333;">
+                <div style="font-size:10px; color:#ff9800; font-weight:bold; letter-spacing:0.5px;">Viral</div>
+                <span id="gcc-viral-arrow" style="font-size:10px; color:#aaa;">▾</span>
+            </div>
+            <div id="gcc-viral-body" style="padding:0 8px 8px; background:#222;">
+                <div style="display:flex; flex-direction:column; gap:4px; padding-top:6px;">
+                    <button class="gcc-global-cluster" data-tid="1" style="background:#444; color:white; border:none; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade C.2</button>
+                    <button class="gcc-global-cluster" data-tid="2" style="background:#444; color:white; border:none; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade C.3</button>
+                    <button class="gcc-global-cluster" data-tid="3" style="background:#444; color:white; border:none; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade C.4</button>
+                    <button class="gcc-global-cluster" data-tid="4" style="background:#444; color:white; border:none; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade C2</button>
+                    <button class="gcc-global-cluster" data-tid="5" style="background:#444; color:white; border:none; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade C3</button>
                 </div>
             </div>
         </div>
@@ -88,7 +104,7 @@ chrome.storage.local.get(['panelPos', 'presets', 'storedSid', 'assimEnabled', 'c
         </style>
     `;
     document.body.appendChild(container);
-    setupLogic(container, savedPresets, sid, !!res.assimEnabled, !!res.clusterCollapsed, !!res.similareCollapsed);
+    setupLogic(container, savedPresets, sid, !!res.assimEnabled, !!res.clusterCollapsed, !!res.similareCollapsed, !!res.viralCollapsed);
 });
 
 async function performGlobalCluster(tid, sid) {
@@ -117,7 +133,7 @@ async function performGlobalCluster(tid, sid) {
     }
 }
 
-function setupLogic(container, presets, sid, assimEnabled, clusterCollapsed, similareCollapsed) {
+function setupLogic(container, presets, sid, assimEnabled, clusterCollapsed, similareCollapsed, viralCollapsed) {
     document.getElementById('gcc-refresh-btn').onclick = () => window.location.reload();
 
     // 1. Global Colony Cluster Logic
@@ -274,7 +290,8 @@ function setupLogic(container, presets, sid, assimEnabled, clusterCollapsed, sim
     };
 
     applyCollapse('gcc-cluster-body', 'gcc-cluster-arrow', clusterCollapsed);
-    applyCollapse('gcc-similare-body', 'gcc-similare-arrow', similareCollapsed);
+    applyCollapse('gcc-similare-body', 'gcc-similare-arrow', similareCollapsed);    
+    applyCollapse('gcc-viral-body', 'gcc-viral-arrow', viralCollapsed);
 
     document.getElementById('gcc-cluster-header').addEventListener('click', () => {
         clusterCollapsed = !clusterCollapsed;
@@ -286,6 +303,12 @@ function setupLogic(container, presets, sid, assimEnabled, clusterCollapsed, sim
         similareCollapsed = !similareCollapsed;
         applyCollapse('gcc-similare-body', 'gcc-similare-arrow', similareCollapsed);
         chrome.storage.local.set({ similareCollapsed });
+    });
+
+    document.getElementById('gcc-viral-header').addEventListener('click', () => {
+        viralCollapsed = !viralCollapsed;
+        applyCollapse('gcc-viral-body', 'gcc-viral-arrow', viralCollapsed);
+        chrome.storage.local.set({ viralCollapsed });
     });
 }
 
@@ -868,7 +891,6 @@ function addAssimilateButtons(sid) {
 
         btn.addEventListener('click', () => {
             if (!sid) return alert('SID not found. Click Cmd to sync first.');
-            if (!confirm(`Assimilate colony ${cid}?`)) return;
             window.location.href = `i.cfm?&${sid}&f=com_change&cid=${cid}&co=1`;
         });
 
