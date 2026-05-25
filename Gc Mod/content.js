@@ -1,48 +1,78 @@
 /** * GC Helper Tool - Final Polished Version with Auto-Explore & Global Clustering
  */
+let sid = null;
 
 // === 1. AUTO-EXPLORE FEATURE ===
-// Instantly runs as soon as the script injects to catch the button immediately
 (function autoExplore() {
-    // Looks for the button via its onclick attribute containing 'com_explore'
     const exploreBtn = document.querySelector('input[type="button"][onclick*="com_explore"]');
     if (exploreBtn) {
         exploreBtn.click();
     }
 })();
 
+function autoClickContinue() {
+    const buttons = document.querySelectorAll('input[type="button"][onclick*="f=com_col"]');
+    const btn = Array.from(buttons).find(b => b.value.trim().toLowerCase() === 'continue');
+    if (btn) btn.click();
+}
+
 // === 2. MAIN EXTENSION PANEL LOGIC ===
-chrome.storage.local.get(['panelPos', 'presets', 'storedSid'], (res) => {
+chrome.storage.local.get(['panelPos', 'presets', 'storedSid', 'assimEnabled', 'clusterCollapsed', 'similareCollapsed'], (res) => {
     const pos = res.panelPos || { top: '20px', left: 'auto', right: '20px' };
     const savedPresets = res.presets || {};
-    
+
     const sidMatch = document.documentElement.innerHTML.match(/&(\d+)&/) || window.location.href.match(/&(\d+)&/);
-    const sid = sidMatch ? sidMatch[1] : res.storedSid;
+    sid = sidMatch ? sidMatch[1] : res.storedSid;
     if (sid) chrome.storage.local.set({ storedSid: sid });
 
     const container = document.createElement('div');
     container.id = 'gcc-preset-panel';
     container.style.cssText = `position:fixed; top:${pos.top}; left:${pos.left}; right:${pos.right}; width:190px; background:#1a1a1a; border:2px solid #444; z-index:99999; border-radius:8px; overflow:hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.5); font-family: Arial, sans-serif; color: white;`;
-    
+
     container.innerHTML = `
         <div id="gcc-handle" style="background:#333; padding:8px; cursor:move; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #444; user-select:none;">
             <span style="font-size:11px; font-weight:bold; margin-left:5px; color:#ddd;">⠿ HELPER</span>
             <button id="gcc-refresh-btn" title="Refresh Page" style="background:#444; border:1px solid #555; color:white; cursor:pointer; border-radius:3px; padding:2px 6px; font-size:12px; line-height:1;">↻</button>
         </div>
-        
+
         <div style="padding:8px; border-bottom:1px solid #333;">
             <div style="font-size:10px; color:#aaa; margin-bottom:5px; font-weight:bold; letter-spacing:0.5px;">SHIP PRESETS</div>
             <div id="gcc-btn-area" style="display:flex; justify-content:space-between; gap:2px;"></div>
         </div>
 
-        <div style="padding:8px; background:#222; border-bottom:1px solid #333;">
-            <div style="font-size:10px; color:#ff9800; margin-bottom:5px; font-weight:bold; letter-spacing:0.5px;">COLONY CLUSTER</div>
-            <div style="display:flex; flex-direction:column; gap:4px;">
-                <button class="gcc-global-cluster" data-tid="20" style="background:#444; color:white; border:none; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade Lvl 1</button>
-                <button class="gcc-global-cluster" data-tid="21" style="background:#444; color:white; border:none; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade Lvl 2</button>
-                <button class="gcc-global-cluster" data-tid="22" style="background:#444; color:white; border:none; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade Lvl 3</button>
+        <div style="border-bottom:1px solid #333;">
+            <div id="gcc-cluster-header" style="padding:8px; background:#222; cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
+                <div style="font-size:10px; color:#ff9800; font-weight:bold; letter-spacing:0.5px;">COLONY CLUSTER</div>
+                <span id="gcc-cluster-arrow" style="font-size:10px; color:#aaa;">▾</span>
             </div>
-            <div id="gcc-cluster-status" style="font-size:9px; color:#888; text-align:center; margin-top:4px; height:10px;"></div>
+            <div id="gcc-cluster-body" style="padding:0 8px 8px; background:#222;">
+                <div style="display:flex; flex-direction:column; gap:4px; padding-top:6px;">
+                    <button class="gcc-global-cluster" data-tid="20" style="background:#444; color:white; border:none; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade Lvl 1</button>
+                    <button class="gcc-global-cluster" data-tid="21" style="background:#444; color:white; border:none; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade Lvl 2</button>
+                    <button class="gcc-global-cluster" data-tid="22" style="background:#444; color:white; border:none; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade Lvl 3</button>
+                </div>
+                <div id="gcc-cluster-status" style="font-size:9px; color:#888; text-align:center; margin-top:4px; height:10px;"></div>
+            </div>
+            <div id="gcc-similare-header" style="padding:8px; background:#222; cursor:pointer; display:flex; justify-content:space-between; align-items:center; border-top:1px solid #333;">
+                <div style="font-size:10px; color:#81d4fa; font-weight:bold; letter-spacing:0.5px;">SIMILARE</div>
+                <span id="gcc-similare-arrow" style="font-size:10px; color:#aaa;">▾</span>
+            </div>
+            <div id="gcc-similare-body" style="padding:0 8px 8px; background:#222;">
+                <div style="display:flex; flex-direction:column; gap:4px; padding-top:6px;">
+                    <button class="gcc-global-cluster" data-tid="1" style="background:#444; color:white; border:none; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade C.2</button>
+                    <button class="gcc-global-cluster" data-tid="2" style="background:#444; color:white; border:none; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade C.3</button>
+                    <button class="gcc-global-cluster" data-tid="3" style="background:#444; color:white; border:none; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade C.4</button>
+                    <button class="gcc-global-cluster" data-tid="7" style="background:#444; color:white; border:none; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade C.5</button>
+                </div>
+            </div>
+        </div>
+
+        <div style="padding:8px; border-bottom:1px solid #333;">
+            <div style="font-size:10px; color:#aaa; margin-bottom:5px; font-weight:bold; letter-spacing:0.5px;">FEATURES</div>
+            <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-size:11px; color:#ddd;">
+                <input type="checkbox" id="gcc-assim-toggle" style="cursor:pointer;">
+                Assimilate Buttons
+            </label>
         </div>
 
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1px; background:#444; border-top:1px solid #444;">
@@ -58,7 +88,7 @@ chrome.storage.local.get(['panelPos', 'presets', 'storedSid'], (res) => {
         </style>
     `;
     document.body.appendChild(container);
-    setupLogic(container, savedPresets, sid);
+    setupLogic(container, savedPresets, sid, !!res.assimEnabled, !!res.clusterCollapsed, !!res.similareCollapsed);
 });
 
 async function performGlobalCluster(tid, sid) {
@@ -67,7 +97,7 @@ async function performGlobalCluster(tid, sid) {
     status.style.color = "#aaa";
 
     const url = `i.cfm?&${sid}&f=com_colupgrade&tid=${tid}&con=1`;
-    
+
     try {
         const response = await fetch(url, {
             method: 'POST',
@@ -87,7 +117,7 @@ async function performGlobalCluster(tid, sid) {
     }
 }
 
-function setupLogic(container, presets, sid) {
+function setupLogic(container, presets, sid, assimEnabled, clusterCollapsed, similareCollapsed) {
     document.getElementById('gcc-refresh-btn').onclick = () => window.location.reload();
 
     // 1. Global Colony Cluster Logic
@@ -111,7 +141,7 @@ function setupLogic(container, presets, sid) {
         btn.innerText = `P${i}`;
         btn.title = getTooltip(presets[i]);
         btn.style.cssText = `flex:1; padding:6px 0; cursor:pointer; border-radius:4px; border:1px solid #444; font-size:10px; background:${presets[i] ? "#2e7d32" : "#333"}; color:white; font-weight:bold;`;
-        
+
         btn.onclick = () => {
             if (!presets[i]) return alert("Preset empty.");
             btn.innerText = "⏳";
@@ -135,7 +165,7 @@ function setupLogic(container, presets, sid) {
             e.preventDefault();
             const inputs = document.querySelectorAll('.gc-builder-input');
             let data = {};
-            inputs.forEach(inp => { 
+            inputs.forEach(inp => {
                 if (inp.value > 0) {
                     const card = inp.closest('.gc-builder-card');
                     let shipName = "Unknown";
@@ -197,6 +227,66 @@ function setupLogic(container, presets, sid) {
         addSimulationsLinks();
         setTimeout(addSimulationsLinks, 500);
     } catch (e) {}
+
+    // 9. Assimilate toggle
+    const assimToggle = document.getElementById('gcc-assim-toggle');
+    assimToggle.checked = assimEnabled;
+
+    const removeAssimilateButtons = () => {
+        document.querySelectorAll('tr[data-gcc-assim-added]').forEach(row => {
+            const lastTd = row.querySelector('td:last-child');
+            if (lastTd) lastTd.remove();
+            delete row.dataset.gccAssimAdded;
+        });
+        const header = document.querySelector('.gcc-assim-header');
+        if (header) header.remove();
+    };
+
+    assimToggle.addEventListener('change', () => {
+        chrome.storage.local.set({ assimEnabled: assimToggle.checked });
+        if (assimToggle.checked) {
+            addAssimilateButtons(sid);
+        } else {
+            removeAssimilateButtons();
+        }
+    });
+
+    if (assimEnabled) {
+        try {
+            addAssimilateButtons(sid);
+            setTimeout(() => addAssimilateButtons(sid), 500);
+            setTimeout(() => addAssimilateButtons(sid), 1000);
+        } catch (e) {}
+    }
+
+    // 10. Auto-click Continue button
+    try {
+        autoClickContinue();
+    } catch(e) {}
+
+    // 11. Collapsible cluster sections
+    const applyCollapse = (bodyId, arrowId, collapsed) => {
+        const body = document.getElementById(bodyId);
+        const arrow = document.getElementById(arrowId);
+        if (!body || !arrow) return;
+        body.style.display = collapsed ? 'none' : 'block';
+        arrow.textContent = collapsed ? '▸' : '▾';
+    };
+
+    applyCollapse('gcc-cluster-body', 'gcc-cluster-arrow', clusterCollapsed);
+    applyCollapse('gcc-similare-body', 'gcc-similare-arrow', similareCollapsed);
+
+    document.getElementById('gcc-cluster-header').addEventListener('click', () => {
+        clusterCollapsed = !clusterCollapsed;
+        applyCollapse('gcc-cluster-body', 'gcc-cluster-arrow', clusterCollapsed);
+        chrome.storage.local.set({ clusterCollapsed });
+    });
+
+    document.getElementById('gcc-similare-header').addEventListener('click', () => {
+        similareCollapsed = !similareCollapsed;
+        applyCollapse('gcc-similare-body', 'gcc-similare-arrow', similareCollapsed);
+        chrome.storage.local.set({ similareCollapsed });
+    });
 }
 
 function addDisbandQuickCells() {
@@ -204,18 +294,16 @@ function addDisbandQuickCells() {
     const tables = Array.from(document.querySelectorAll('table.Default'));
     if (!tables.length) return;
     tables.forEach(table => {
-        // ensure table has a header row
         const header = table.querySelector('tr.Header');
         if (!header) return;
 
-        // Clean previously inserted quick-header cells and insert proper ordered header cells
         Array.from(header.querySelectorAll('td')).forEach(td => {
             const t = (td.textContent || '').trim();
             if (t === '10%' || t === '50%' || t === 'All') td.remove();
         });
         const headerTds = Array.from(header.querySelectorAll('td'));
         let disIdx = headerTds.findIndex(td => /disband/i.test(td.textContent || ''));
-        if (disIdx === -1) disIdx = 2; // fallback
+        if (disIdx === -1) disIdx = 2;
         const disHeaderRef = headerTds[disIdx];
         if (disHeaderRef) {
             const frag = document.createDocumentFragment();
@@ -229,7 +317,6 @@ function addDisbandQuickCells() {
             header.insertBefore(frag, disHeaderRef);
         }
 
-        // For each row, remove stray quick cells immediately before Disband TD, then insert properly ordered cells
         const rows = Array.from(table.querySelectorAll('tr')).filter(r => !/header/i.test(r.className || ''));
         rows.forEach(row => {
             const disInput = row.querySelector('input[name^="dis_"]');
@@ -237,7 +324,6 @@ function addDisbandQuickCells() {
             const disTd = disInput.closest('td');
             if (!disTd) return;
 
-            // Remove any existing quick cells directly to the left of disTd
             let prev = disTd.previousElementSibling;
             while (prev && ['10%','50%','All'].includes((prev.textContent||'').trim())) {
                 const rem = prev;
@@ -245,7 +331,6 @@ function addDisbandQuickCells() {
                 rem.remove();
             }
 
-            // Insert fragment of three TDs before disTd
             const frag = document.createDocumentFragment();
             ['10%','50%','All'].forEach(label => {
                 const td = document.createElement('td');
@@ -275,7 +360,6 @@ function addDisbandQuickCells() {
                 frag.appendChild(td);
             });
             row.insertBefore(frag, disTd);
-
             disTd.dataset.gccQuickCellsAdded = '1';
         });
     });
@@ -446,84 +530,6 @@ async function loadShipStatsFromUrl(url) {
     } catch (e) {
         return null;
     }
-
-    // 4. Disband quick buttons (10% / 50% / All)
-    try {
-        addDisbandQuickButtons();
-        // ensure styles are present and retry a few times in case table loads late
-        setTimeout(addDisbandQuickButtons, 500);
-        setTimeout(addDisbandQuickButtons, 1000);
-        setTimeout(addDisbandQuickButtons, 2000);
-        // observe for DOM changes to re-run when table is updated
-        const tblObserver = new MutationObserver(() => {
-            addDisbandQuickButtons();
-        });
-        tblObserver.observe(document.body, { childList: true, subtree: true });
-    } catch (e) {}
-}
-
-// Inject quick-disband buttons into each row's Disband cell
-function addDisbandQuickButtons() {
-    ensureDisbandStyles();
-    const disInputs = Array.from(document.querySelectorAll('input[name^="dis_"]'));
-    if (!disInputs.length) return;
-    disInputs.forEach(disInput => {
-        if (disInput.dataset.gccButtonsAdded) return;
-        const tr = disInput.closest('tr');
-        if (!tr) return;
-
-        // Prefer the 4th cell (index 3) for In Fleet
-        const cells = Array.from(tr.querySelectorAll('td'));
-        let inFleetCell = null;
-        if (cells.length >= 4) inFleetCell = cells[3];
-        else {
-            // fallback: find the first right-aligned numeric cell not the disband cell
-            inFleetCell = cells.find(td => td !== disInput.parentElement && /\d[\d,]*\d/.test(td.textContent || ''));
-        }
-        if (!inFleetCell) return;
-
-        const container = document.createElement('div');
-        container.style.setProperty('display','inline-flex','important');
-        container.style.setProperty('flex-wrap','wrap','important');
-        container.style.setProperty('gap','6px','important');
-        container.style.setProperty('justify-content','center','important');
-        container.style.setProperty('margin-left','6px','important');
-        container.style.setProperty('align-items','center','important');
-
-        const options = [ {label:'10%', pct:0.10}, {label:'50%', pct:0.50}, {label:'All', pct:1} ];
-        options.forEach(opt => {
-            const btn = document.createElement('button');
-            btn.type = 'button';
-            btn.innerText = opt.label;
-            btn.title = `Set to ${opt.label}`;
-            btn.style.cssText = 'background:#e8b563;border:none;color:#08203a;padding:4px 8px;border-radius:4px;cursor:pointer;font-size:12px;font-weight:700;';
-            btn.style.setProperty('min-width','34px','important');
-            btn.style.setProperty('line-height','1','important');
-            btn.addEventListener('click', () => {
-                const raw = (inFleetCell.textContent || '').replace(/[^0-9,.-]/g,'').replace(/,/g,'').trim();
-                let n = parseInt(raw,10);
-                if (isNaN(n) || n < 0) n = 0;
-                let val = 0;
-                if (opt.pct === 1) val = n;
-                else val = Math.floor(n * opt.pct);
-                disInput.value = val;
-                disInput.dispatchEvent(new Event('input', { bubbles: true }));
-                disInput.dispatchEvent(new Event('change', { bubbles: true }));
-            });
-            container.appendChild(btn);
-        });
-
-        // append UI to the Disband cell (after the input)
-        // ensure parent cell can contain our buttons
-        try {
-            disInput.parentElement.style.setProperty('display','inline-flex','important');
-            disInput.parentElement.style.setProperty('white-space','nowrap','important');
-            disInput.parentElement.style.setProperty('align-items','center','important');
-        } catch(e){}
-        // insert container after the input so it remains visible even in tight cells
-        disInput.insertAdjacentElement('afterend', container);
-        disInput.dataset.gccButtonsAdded = '1';
-    });
 }
 
 function createLabelMap() {
@@ -570,7 +576,6 @@ function extractShipStatsFromDetailDoc(doc) {
         if (match) stats[label] = match[1].trim();
     });
 
-    // Parse generic rows (keeps previous behavior)
     const rows = Array.from(doc.querySelectorAll('tr'));
     rows.forEach(row => {
         const cells = Array.from(row.querySelectorAll('td,th'));
@@ -581,7 +586,6 @@ function extractShipStatsFromDetailDoc(doc) {
         if (labelMap[normalized]) stats[labelMap[normalized]] = rawValue;
     });
 
-    // Prefer structured tables for Ship Specials and Defense Modifier if present
     const auxTables = Array.from(doc.querySelectorAll('table.gc-ship-aux-table'));
     auxTables.forEach(table => {
         try {
@@ -621,7 +625,6 @@ function extractShipStatsFromDetailDoc(doc) {
         if (labelMap[normalized]) stats[labelMap[normalized]] = rawValue;
     });
 
-    // If structured aux tables didn't provide Ship Specials, fall back to a broader search.
     if (!stats['Ship Specials']) {
         const specials = [];
         const possibleHeaders = Array.from(doc.querySelectorAll('h1,h2,h3,h4,h5,legend,th,div,span'));
@@ -629,21 +632,17 @@ function extractShipStatsFromDetailDoc(doc) {
             try {
                 if (!h.textContent) return;
                 if (/ship specials?/i.test(h.textContent)) {
-                    // gather following sibling nodes that contain text
                     let node = h.nextElementSibling;
                     let guard = 0;
                     while (node && guard < 30) {
                         const t = (node.textContent || '').trim();
                         if (t) {
-                            // split by lines and push
                             t.split(/\n+/).map(s => s.trim()).forEach(s => { if (s) specials.push(s); });
                         }
-                        // stop if next header encountered
                         if (/^H[1-6]$/i.test(node.tagName)) break;
                         node = node.nextElementSibling;
                         guard++;
                     }
-                    // also check the parent container for <p> items
                     const parent = h.parentElement;
                     if (specials.length === 0 && parent) {
                         parent.querySelectorAll && parent.querySelectorAll('p,li,dd').forEach(el => {
@@ -777,7 +776,6 @@ function buildShipTooltipHtml(stats) {
     const buildSection = (title, keys) => {
         const rows = keys.filter(key => stats[key]).map(key => {
             const val = stats[key];
-            // color defense modifiers
             let valueHtml = `<span class=\"gcc-tooltip-value\">${val}</span>`;
             if (['Absorption Shield','ECM','Ionized Hull','Energy Shield'].includes(key)) {
                 const negative = /-\s*\d/.test(val);
@@ -796,7 +794,6 @@ function buildShipTooltipHtml(stats) {
     html += buildSection('Defense Mods', defenseKeys);
     html += buildSection('Other Stats', otherKeys);
 
-    // Ship Specials section (array of freeform strings)
     if (stats['Ship Specials'] && Array.isArray(stats['Ship Specials']) && stats['Ship Specials'].length) {
         const specialsHtml = stats['Ship Specials'].map(s => `<div class="gcc-tooltip-row"><span class="gcc-tooltip-label">${s}</span></div>`).join('');
         html += `<div class="gcc-tooltip-section"><div class="gcc-tooltip-header">Ship Specials</div>${specialsHtml}</div>`;
@@ -834,4 +831,49 @@ function ensureDisbandStyles() {
     .gcc-disband-buttons button:hover { background: var(--accent-hover) !important; }
     `;
     document.head.appendChild(s);
+}
+
+function addAssimilateButtons(sid) {
+    const table = document.querySelector('table.gc-colony-list-table');
+    if (!table) return;
+
+    const headerRow = table.querySelector('thead tr.Header');
+    if (headerRow && !headerRow.querySelector('.gcc-assim-header')) {
+        const th = document.createElement('td');
+        th.className = 'gcc-assim-header';
+        th.textContent = 'Assimilate';
+        th.style.cssText = 'font-weight:bold; white-space:nowrap;';
+        headerRow.appendChild(th);
+    }
+
+    const rows = Array.from(table.querySelectorAll('tbody tr'));
+    rows.forEach(row => {
+        if (row.dataset.gccAssimAdded) return;
+
+        const anchor = row.querySelector('td a[href*="f=com_col&colid="]');
+        if (!anchor) return;
+
+        const match = anchor.getAttribute('href').match(/colid=(\d+)/);
+        if (!match) return;
+        const cid = match[1];
+
+        const td = document.createElement('td');
+        td.style.textAlign = 'center';
+
+        const btn = document.createElement('button');
+        btn.textContent = '✔';
+        btn.style.cssText = 'background:#c0392b; color:white; border:none; padding:4px 10px; border-radius:4px; cursor:pointer; font-size:11px; font-weight:700;';
+        btn.addEventListener('mouseenter', () => btn.style.background = '#e74c3c');
+        btn.addEventListener('mouseleave', () => btn.style.background = '#c0392b');
+
+        btn.addEventListener('click', () => {
+            if (!sid) return alert('SID not found. Click Cmd to sync first.');
+            if (!confirm(`Assimilate colony ${cid}?`)) return;
+            window.location.href = `i.cfm?&${sid}&f=com_change&cid=${cid}&co=1`;
+        });
+
+        td.appendChild(btn);
+        row.appendChild(td);
+        row.dataset.gccAssimAdded = '1';
+    });
 }
