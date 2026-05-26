@@ -101,10 +101,10 @@ A small userscript / content script for the GC mod site that adds helper UI, qui
 - `Cmd`, `Build`, `Fleet`, `Rank` — site shortcuts with session sync.
 
 ## Installation
-
-1. Navigate to chrome://extensions/
-2. Eanble Devoloper mode in the top right corner.
-3. Hit load unpacked
+download: the GC Mod folder and extract somewhere.
+1. Navigate to chrome://extensions/ ![step1](step1.png)
+2. Eanble Devoloper mode in the top right corner. ![step2](step2.png)
+3. Hit load unpacked ![step3](step3.png)
 4. Load the folder that you downloaded.
 5. Head back to the game and refresh.
 
