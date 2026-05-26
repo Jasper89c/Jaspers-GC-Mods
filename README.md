@@ -77,6 +77,12 @@ A small userscript / content script for the GC mod site that adds helper UI, qui
 - assimilate collective planets from the manage colonies screen.
 - enable/disable this feature in the helper panel if you are not playing collective.
 
+### 12. Federation Tags
+- added federation names to ranking pages.
+
+### 13. Federation Wars
+- changed the colour of the attack button in rankings page to Green if the users federation is at war with your federation.
+
 ## Shortcuts & Controls
 
 ### Mouse controls
