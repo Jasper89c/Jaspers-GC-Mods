@@ -17,7 +17,7 @@ function autoClickContinue() {
 }
 
 // === 2. MAIN EXTENSION PANEL LOGIC ===
-chrome.storage.local.get(['panelPos', 'presets', 'storedSid', 'assimEnabled', 'clusterCollapsed', 'similareCollapsed', 'viralCollapsed', 'fedLazy', 'fedFull'], (res) => {
+chrome.storage.local.get(['panelPos', 'presets', 'storedSid', 'assimEnabled', 'infectEnabled', 'clusterCollapsed', 'similareCollapsed', 'viralCollapsed', 'fedLazy', 'fedFull'], (res) => {
     const pos = res.panelPos || { top: '20px', left: 'auto', right: '20px' };
     const savedPresets = res.presets || {};
 
@@ -88,6 +88,10 @@ chrome.storage.local.get(['panelPos', 'presets', 'storedSid', 'assimEnabled', 'c
                 <input type="checkbox" id="gcc-assim-toggle" style="cursor:pointer;">
                 Assimilate Buttons
             </label>
+            <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-size:11px; color:#ddd; margin-bottom:4px;">
+                <input type="checkbox" id="gcc-infect-toggle" style="cursor:pointer;">
+                Infect Buttons
+            </label>
             <div style="font-size:10px; color:#aaa; margin:6px 0 4px; font-weight:bold; letter-spacing:0.5px;">FEDERATION NAMES</div>
             <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-size:11px; color:#ddd; margin-bottom:4px;">
                 <input type="checkbox" id="gcc-fed-lazy" style="cursor:pointer;">
@@ -112,7 +116,7 @@ chrome.storage.local.get(['panelPos', 'presets', 'storedSid', 'assimEnabled', 'c
         </style>
     `;
     document.body.appendChild(container);
-    setupLogic(container, savedPresets, sid, !!res.assimEnabled, !!res.clusterCollapsed, !!res.similareCollapsed, !!res.viralCollapsed, !!res.fedLazy, !!res.fedFull);
+    setupLogic(container, savedPresets, sid, !!res.assimEnabled, !!res.infectEnabled, !!res.clusterCollapsed, !!res.similareCollapsed, !!res.viralCollapsed, !!res.fedLazy, !!res.fedFull);
 });
 
 async function performGlobalCluster(tid, sid) {
@@ -304,7 +308,7 @@ function removeFedNames() {
     document.querySelectorAll('[data-gcc-fed-full-done]').forEach(el => delete el.dataset.gccFedFullDone);
 }
 
-function setupLogic(container, presets, sid, assimEnabled, clusterCollapsed, similareCollapsed, viralCollapsed, fedLazy, fedFull) {
+function setupLogic(container, presets, sid, assimEnabled, infectEnabled, clusterCollapsed, similareCollapsed, viralCollapsed, fedLazy, fedFull) {
     document.getElementById('gcc-refresh-btn').onclick = () => window.location.reload();
 
     // 1. Global Colony Cluster Logic
@@ -415,7 +419,7 @@ function setupLogic(container, presets, sid, assimEnabled, clusterCollapsed, sim
         setTimeout(addSimulationsLinks, 500);
     } catch (e) {}
 
-    // 9. Assimilate toggle
+    // 9a. Assimilate toggle
     const assimToggle = document.getElementById('gcc-assim-toggle');
     assimToggle.checked = assimEnabled;
 
@@ -443,6 +447,36 @@ function setupLogic(container, presets, sid, assimEnabled, clusterCollapsed, sim
             addAssimilateButtons(sid);
             setTimeout(() => addAssimilateButtons(sid), 500);
             setTimeout(() => addAssimilateButtons(sid), 1000);
+        } catch (e) {}
+    }
+    // 9b. infect toggle
+    const infectToggle = document.getElementById('gcc-infect-toggle');
+    infectToggle.checked = infectEnabled;
+
+    const removeInfectButtons = () => {
+        document.querySelectorAll('tr[data-gcc-infect-added]').forEach(row => {
+            const lastTd = row.querySelector('td:last-child');
+            if (lastTd) lastTd.remove();
+            delete row.dataset.gccInfectAdded;
+        });
+        const header = document.querySelector('.gcc-infect-header');
+        if (header) header.remove();
+    };
+
+    infectToggle.addEventListener('change', () => {
+        chrome.storage.local.set({ infectEnabled: infectToggle.checked });
+        if (infectToggle.checked) {
+            addInfectButtons(sid);
+        } else {
+            removeInfectButtons();
+        }
+    });
+
+    if (infectEnabled) {
+        try {
+            addInfectButtons(sid);
+            setTimeout(() => addInfectButtons(sid), 500);
+            setTimeout(() => addInfectButtons(sid), 1000);
         } catch (e) {}
     }
 
@@ -1103,5 +1137,49 @@ function addAssimilateButtons(sid) {
         td.appendChild(btn);
         row.appendChild(td);
         row.dataset.gccAssimAdded = '1';
+    });
+}
+
+function addInfectButtons(sid) {
+    const table = document.querySelector('table.gc-colony-list-table');
+    if (!table) return;
+
+    const headerRow = table.querySelector('thead tr.Header');
+    if (headerRow && !headerRow.querySelector('.gcc-infect-header')) {
+        const th = document.createElement('td');
+        th.className = 'gcc-infect-header';
+        th.textContent = 'Infect';
+        th.style.cssText = 'font-weight:bold; white-space:nowrap;';
+        headerRow.appendChild(th);
+    }
+
+    const rows = Array.from(table.querySelectorAll('tbody tr'));
+    rows.forEach(row => {
+        if (row.dataset.gccInfectAdded) return;
+
+        const anchor = row.querySelector('td a[href*="f=com_col&colid="]');
+        if (!anchor) return;
+
+        const match = anchor.getAttribute('href').match(/colid=(\d+)/);
+        if (!match) return;
+        const cid = match[1];
+
+        const td = document.createElement('td');
+        td.style.textAlign = 'center';
+
+        const btn = document.createElement('button');
+        btn.textContent = '✔';
+        btn.style.cssText = 'background:#c0392b; color:white; border:none; padding:4px 10px; border-radius:4px; cursor:pointer; font-size:11px; font-weight:700;';
+        btn.addEventListener('mouseenter', () => btn.style.background = '#e74c3c');
+        btn.addEventListener('mouseleave', () => btn.style.background = '#c0392b');
+
+        btn.addEventListener('click', () => {
+            if (!sid) return alert('SID not found. Click Cmd to sync first.');
+            window.location.href = `i.cfm?&${sid}&f=com_change&cid=${cid}&co=1`;
+        });
+
+        td.appendChild(btn);
+        row.appendChild(td);
+        row.dataset.gccInfectAdded = '1';
     });
 }
