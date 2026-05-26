@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GC Helper - Feature Dashboard</title>
+    <style>
+        :root {
+            --bg-main: #121212;
+            --bg-card: #1a1a1a;
+            --bg-header: #222222;
+            --border-color: #333333;
+            --accent-orange: #ff9800;
+            --text-primary: #ffffff;
+            --text-secondary: #aaaaaa;
+            --status-active: #2e7d32;
+            --status-disabled: #c0392b;
+            --link-blue: #9edcfe;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: var(--bg-main);
+            color: var(--text-primary);
+            margin: 0;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        header {
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        h1 {
+            color: var(--accent-orange);
+            margin: 0;
+            font-size: 24px;
+            letter-spacing: 0.5px;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 13px;
+            margin-top: 5px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            background-color: var(--bg-card);
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+        }
+
+        .card-content h3 {
+            margin: 0 0 10px 0;
+            font-size: 16px;
+            color: var(--link-blue);
+            letter-spacing: 0.5px;
+        }
+
+        .card-content p {
+            margin: 0;
+            font-size: 12px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        .badge {
+            align-self: flex-start;
+            margin-top: 15px;
+            font-size: 10px;
+            font-weight: bold;
+            padding: 4px 8px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            background-color: var(--border-color);
+            color: var(--text-secondary);
+        }
+
+        .badge.active {
+            background-color: var(--status-active);
+            color: white;
+        }
+
+        .badge.always-on {
+            background-color: #444;
+            color: #ddd;
+        }
+
+        .target-pages {
+            font-size: 10px;
+            color: var(--accent-orange);
+            font-family: monospace;
+            margin-bottom: 8px;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div>
+                <h1>Jaspers GC Mods Dashboard</h1>
+                <div class="subtitle">Complete runtime monitoring panel for injected core features.</div>
+            </div>
+        </header>
+        
+        <div class="grid">
+            <div class="card">
+                <div class="card-content">
+                    <span class="target-pages">Any Context</span>
+                    <h3>Auto-Explore Automator</h3>
+                    <p>Detects background event parameters and clicks explore handlers instantly. Suppresses stale sequence validation loops automatically.</p>
+                </div>
+                <span class="badge always-on">Always Active</span>
+            </div>
+
+            <div class="card">
+                <div class="card-content">
+                    <span class="target-pages">Any Context</span>
+                    <h3>Sequential Continue Layer</h3>
+                    <p>Scans the DOM array for continuation commands containing <code>f=com_col</code>. Simulates click sequences on "Continue" targets immediately.</p>
+                </div>
+                <span class="badge always-on">Always Active</span>
+            </div>
+
+            <div class="card">
+                <div class="card-content">
+                    <span class="target-pages">Extension Menu</span>
+                    <h3>Global Clustering Core</h3>
+                    <p>Aggregates asynchronous POST operations across three modules (Regular, Collective, and Viral) to run sector updates dynamically without direct nav jumps.</p>
+                </div>
+                <span class="badge always-on">Always Active</span>
+            </div>
+
+            <div class="card">
+                <div class="card-content">
+                    <span class="target-pages">f=com_ship</span>
+                    <h3>Ship Preset Hot-Keys (P1 - P5)</h3>
+                    <p>Saves complex builder loadouts locally via right-click arrays and processes automated batch allocations inside targeted iframe buffers.</p>
+                </div>
+                <span class="badge always-on">Always Active</span>
+            </div>
+
+            <div class="card">
+                <div class="card-content">
+                    <span class="target-pages">gc-colony-list-table</span>
+                    <h3>Assimilate Table Cells</h3>
+                    <p>Injects customized column hooks into active colony summary matrix layouts to perform background routing overrides.</p>
+                </div>
+                <span class="badge" id="dash-assim-status">Disabled</span>
+            </div>
+
+            <div class="card">
+                <div class="card-content">
+                    <span class="target-pages">gc-colony-list-table</span>
+                    <h3>Infect Table Cells</h3>
+                    <p>Generates dedicated background execution handlers inside colony listing templates to immediately register change routes.</p>
+                </div>
+                <span class="badge" id="dash-infect-status">Disabled</span>
+            </div>
+
+            <div class="card">
+                <div class="card-content">
+                    <span class="target-pages">f=rank</span>
+                    <h3>Asynchronous Intelligence Maps</h3>
+                    <p>Pulls live data configurations asynchronously from target intel profiles and renders custom tracking text directly under rank names.</p>
+                </div>
+                <span class="badge" id="dash-fed-status">Disabled</span>
+            </div>
+
+            <div class="card">
+                <div class="card-content">
+                    <span class="target-pages">f=com_disband</span>
+                    <h3>Fleet Disband Proportional Arrays</h3>
+                    <p>Modifies active disband views to provide 10%, 50%, and 100% threshold links. Runs on-the-fly math calculation updates on current allocations.</p>
+                </div>
+                <span class="badge always-on">Always Active</span>
+            </div>
+
+            <div class="card">
+                <div class="card-content">
+                    <span class="target-pages">f=com_ship</span>
+                    <h3>Shipyard Turn Batch Modifiers</h3>
+                    <p>Appends immediate +5 and +10 batch iteration controls into standard ship production card components to scale calculation output.</p>
+                </div>
+                <span class="badge always-on">Always Active</span>
+            </div>
+
+            <div class="card">
+                <div class="card-content">
+                    <span class="target-pages">gc-builder-card__titleline</span>
+                    <h3>Shipyard Tooltip Analysis Overlays</h3>
+                    <p>Tracks active layout updates using MutationObservers. Generates dynamic hovering modules parsed via specific data maps and caching profiles.</p>
+                </div>
+                <span class="badge always-on">Always Active</span>
+            </div>
+
+            <div class="card">
+                <div class="card-content">
+                    <span class="target-pages">Any Context</span>
+                    <h3>Dynamic Footer Quick-Links</h3>
+                    <p>Extracts session markers dynamically and embeds hardcoded shortcut hyperlinks directly into the user interface for Cmd, Build, Fleet, and Rank views.</p>
+                </div>
+                <span class="badge always-on">Always Active</span>
+            </div>
+
+            <div class="card">
+                <div class="card-content">
+                    <span class="target-pages">.icon-bar2</span>
+                    <h3>Augury Simulator Shortcuts</h3>
+                    <p>Appends clean external target shortcuts to cross-reference system setups directly into the primary navigation layouts securely.</p>
+                </div>
+                <span class="badge always-on">Always Active</span>
+            </div>
+        </div>
+    </div>
+    <script src="dashboard.js"></script>
+</body>
+</html>

@@ -108,6 +108,7 @@ chrome.storage.local.get(['panelPos', 'presets', 'storedSid', 'assimEnabled', 'i
             <a href="i.cfm?f=com_ship" id="lnk-build" class="gcc-footer-link">Build</a>
             <a href="i.cfm?f=com_disband" id="lnk-manage" class="gcc-footer-link">Fleet</a>
             <a href="i.cfm?f=rank" id="lnk-rank" class="gcc-footer-link">Rank</a>
+            <a href="#" id="lnk-dashboard" class="gcc-footer-link" style="color: #ff9800;">Dashboard</a>
         </div>
 
         <style>
@@ -310,6 +311,19 @@ function removeFedNames() {
 
 function setupLogic(container, presets, sid, assimEnabled, infectEnabled, clusterCollapsed, similareCollapsed, viralCollapsed, fedLazy, fedFull) {
     document.getElementById('gcc-refresh-btn').onclick = () => window.location.reload();
+
+    // Add this line inside your setupLogic execution function block in content.js
+    const dashLink = document.getElementById('lnk-dashboard');
+    if (dashLink) {
+        dashLink.addEventListener('click', (e) => {
+            e.preventDefault();
+        
+            // Use the chrome runtime API to pull the accurate internal address
+            const dashboardUrl = chrome.runtime.getURL('dashboard.html');
+        
+            window.open(dashboardUrl, '_blank');
+        });
+    }
 
     // 1. Global Colony Cluster Logic
     document.querySelectorAll('.gcc-global-cluster').forEach(btn => {

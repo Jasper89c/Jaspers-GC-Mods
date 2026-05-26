@@ -2,12 +2,35 @@
   "manifest_version": 3,
   "name": "Jaspers GC Mods",
   "version": "1.0",
-  "permissions": ["storage"],
+  "permissions": [
+    "storage"
+  ],
+  "options_ui": {
+    "page": "dashboard.html",
+    "open_in_tab": true
+  },
   "content_scripts": [
     {
-      "matches": ["https://gcc.wrindustries.com/i.cfm?*"],
-      "js": ["content.js"],
-      "css": ["styles.css"]
+      "matches": [
+        "https://gcc.wrindustries.com/i.cfm?*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "css": [
+        "styles.css"
+      ]
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "dashboard.html",
+        "dashboard.js"
+      ],
+      "matches": [
+        "https://gcc.wrindustries.com/*"
+      ]
     }
   ]
 }
