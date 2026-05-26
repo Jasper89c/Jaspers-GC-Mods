@@ -27,63 +27,63 @@ chrome.storage.local.get(['panelPos', 'presets', 'storedSid', 'assimEnabled', 'i
 
     const container = document.createElement('div');
     container.id = 'gcc-preset-panel';
-    container.style.cssText = `position:fixed; top:${pos.top}; left:${pos.left}; right:${pos.right}; width:190px; background:#1a1a1a; border:2px solid #444; z-index:99999; border-radius:8px; overflow:hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.5); font-family: Arial, sans-serif; color: white;`;
+    container.style.cssText = `position:fixed; top:${pos.top}; left:${pos.left}; right:${pos.right}; width:190px; background:#2a365a; border:2px solid #444; z-index:99999; border-radius:8px; overflow:hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.5); font-family: Arial, sans-serif; color: white;`;
 
     container.innerHTML = `
-        <div id="gcc-handle" style="background:#333; padding:8px; cursor:move; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #444; user-select:none;">
-            <span style="font-size:11px; font-weight:bold; margin-left:5px; color:#ddd;">⠿ HELPER</span>
+        <div id="gcc-handle" style="background:#1f2842; padding:8px; cursor:move; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #444; user-select:none;">
+            <span style="font-size:11px; font-weight:bold; margin-left:5px; color:#ff9800;">⠿ HELPER</span>
             <button id="gcc-refresh-btn" title="Refresh Page" style="background:#444; border:1px solid #555; color:white; cursor:pointer; border-radius:3px; padding:2px 6px; font-size:12px; line-height:1;">↻</button>
         </div>
 
         <div style="padding:8px; border-bottom:1px solid #333;">
-            <div style="font-size:10px; color:#aaa; margin-bottom:5px; font-weight:bold; letter-spacing:0.5px;">SHIP PRESETS</div>
+            <div style="font-size:10px; color:#ff9800; margin-bottom:5px; font-weight:bold; letter-spacing:0.5px;">SHIP PRESETS</div>
             <div id="gcc-btn-area" style="display:flex; justify-content:space-between; gap:2px;"></div>
         </div>
 
         <div style="border-bottom:1px solid #333;">
-            <div id="gcc-cluster-header" style="padding:8px; background:#222; cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
+            <div id="gcc-cluster-header" style="padding:8px; background:#1f2842; cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
                 <div style="font-size:10px; color:#ff9800; font-weight:bold; letter-spacing:0.5px;">Regular Cluster</div>
                 <span id="gcc-cluster-arrow" style="font-size:10px; color:#aaa;">▾</span>
             </div>
-            <div id="gcc-cluster-body" style="padding:0 8px 8px; background:#222;">
+            <div id="gcc-cluster-body" style="padding:0 8px 8px; background:#1f2842;">
                 <div style="display:flex; flex-direction:column; gap:4px; padding-top:6px;">
-                    <button class="gcc-global-cluster" data-tid="20" style="background:#444; color:white; border:none; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade Lvl 1</button>
-                    <button class="gcc-global-cluster" data-tid="21" style="background:#444; color:white; border:none; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade Lvl 2</button>
-                    <button class="gcc-global-cluster" data-tid="22" style="background:#444; color:white; border:none; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade Lvl 3</button>
+                    <button class="gcc-global-cluster" data-tid="20" style="background:#1f2842; color:white; border:1px solid #444; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade Lvl 1</button>
+                    <button class="gcc-global-cluster" data-tid="21" style="background:#1f2842; color:white; border:1px solid #444; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade Lvl 2</button>
+                    <button class="gcc-global-cluster" data-tid="22" style="background:#1f2842; color:white; border:1px solid #444; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade Lvl 3</button>
                 </div>
                 <div id="gcc-cluster-status" style="font-size:9px; color:#888; text-align:center; margin-top:4px; height:10px;"></div>
             </div>
-            <div id="gcc-similare-header" style="padding:8px; background:#222; cursor:pointer; display:flex; justify-content:space-between; align-items:center; border-top:1px solid #333;">
+            <div id="gcc-similare-header" style="padding:8px; background:#1f2842; cursor:pointer; display:flex; justify-content:space-between; align-items:center; border-top:1px solid #333;">
                 <div style="font-size:10px; color:#ff9800; font-weight:bold; letter-spacing:0.5px;">Collective</div>
                 <span id="gcc-similare-arrow" style="font-size:10px; color:#aaa;">▾</span>
             </div>
-            <div id="gcc-similare-body" style="padding:0 8px 8px; background:#222;">
+            <div id="gcc-similare-body" style="padding:0 8px 8px; background:#1f2842;">
                 <div style="display:flex; flex-direction:column; gap:4px; padding-top:6px;">
-                    <button class="gcc-global-cluster" data-tid="1" style="background:#444; color:white; border:none; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade C.2</button>
-                    <button class="gcc-global-cluster" data-tid="2" style="background:#444; color:white; border:none; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade C.3</button>
-                    <button class="gcc-global-cluster" data-tid="3" style="background:#444; color:white; border:none; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade C.4</button>
-                    <button class="gcc-global-cluster" data-tid="7" style="background:#444; color:white; border:none; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade C.5</button>
-                    <button class="gcc-global-cluster" data-tid="5" style="background:#444; color:white; border:none; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade C2</button>
-                    <button class="gcc-global-cluster" data-tid="6" style="background:#444; color:white; border:none; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade C3</button>
+                    <button class="gcc-global-cluster" data-tid="1" style="background:#1f2842; color:white; border:1px solid #444; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade C.2</button>
+                    <button class="gcc-global-cluster" data-tid="2" style="background:#1f2842; color:white; border:1px solid #444; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade C.3</button>
+                    <button class="gcc-global-cluster" data-tid="3" style="background:#1f2842; color:white; border:1px solid #444; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade C.4</button>
+                    <button class="gcc-global-cluster" data-tid="7" style="background:#1f2842; color:white; border:1px solid #444; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade C.5</button>
+                    <button class="gcc-global-cluster" data-tid="5" style="background:#1f2842; color:white; border:1px solid #444; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade C2</button>
+                    <button class="gcc-global-cluster" data-tid="6" style="background:#1f2842; color:white; border:1px solid #444; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade C3</button>
                 </div>
             </div>
-            <div id="gcc-viral-header" style="padding:8px; background:#222; cursor:pointer; display:flex; justify-content:space-between; align-items:center; border-top:1px solid #333;">
+            <div id="gcc-viral-header" style="padding:8px; background:#1f2842; cursor:pointer; display:flex; justify-content:space-between; align-items:center; border-top:1px solid #333;">
                 <div style="font-size:10px; color:#ff9800; font-weight:bold; letter-spacing:0.5px;">Viral</div>
                 <span id="gcc-viral-arrow" style="font-size:10px; color:#aaa;">▾</span>
             </div>
-            <div id="gcc-viral-body" style="padding:0 8px 8px; background:#222;">
+            <div id="gcc-viral-body" style="padding:0 8px 8px; background:#1f2842;">
                 <div style="display:flex; flex-direction:column; gap:4px; padding-top:6px;">
-                    <button class="gcc-global-cluster" data-tid="1" style="background:#444; color:white; border:none; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade C.2</button>
-                    <button class="gcc-global-cluster" data-tid="2" style="background:#444; color:white; border:none; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade C.3</button>
-                    <button class="gcc-global-cluster" data-tid="3" style="background:#444; color:white; border:none; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade C.4</button>
-                    <button class="gcc-global-cluster" data-tid="4" style="background:#444; color:white; border:none; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade C2</button>
-                    <button class="gcc-global-cluster" data-tid="5" style="background:#444; color:white; border:none; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade C3</button>
+                    <button class="gcc-global-cluster" data-tid="1" style="background:#1f2842; color:white; border:1px solid #444; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade C.2</button>
+                    <button class="gcc-global-cluster" data-tid="2" style="background:#1f2842; color:white; border:1px solid #444; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade C.3</button>
+                    <button class="gcc-global-cluster" data-tid="3" style="background:#1f2842; color:white; border:1px solid #444; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade C.4</button>
+                    <button class="gcc-global-cluster" data-tid="4" style="background:#1f2842; color:white; border:1px solid #444; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade C2</button>
+                    <button class="gcc-global-cluster" data-tid="5" style="background:#1f2842; color:white; border:1px solid #444; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade C3</button>
                 </div>
             </div>
         </div>
 
         <div style="padding:8px; border-bottom:1px solid #333;">
-            <div style="font-size:10px; color:#aaa; margin-bottom:5px; font-weight:bold; letter-spacing:0.5px;">FEATURES</div>
+            <div style="font-size:10px; color:#ff9800; margin-bottom:5px; font-weight:bold; letter-spacing:0.5px;">FEATURES</div>
             <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-size:11px; color:#ddd; margin-bottom:4px;">
                 <input type="checkbox" id="gcc-assim-toggle" style="cursor:pointer;">
                 Assimilate Buttons
@@ -92,7 +92,7 @@ chrome.storage.local.get(['panelPos', 'presets', 'storedSid', 'assimEnabled', 'i
                 <input type="checkbox" id="gcc-infect-toggle" style="cursor:pointer;">
                 Infect Buttons
             </label>
-            <div style="font-size:10px; color:#aaa; margin:6px 0 4px; font-weight:bold; letter-spacing:0.5px;">FEDERATION NAMES</div>
+            <div style="font-size:10px; color:#ff9800; margin:6px 0 4px; font-weight:bold; letter-spacing:0.5px;">FEDERATION NAMES</div>
             <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-size:11px; color:#ddd; margin-bottom:4px;">
                 <input type="checkbox" id="gcc-fed-lazy" style="cursor:pointer;">
                 Lazy Load (hover)
@@ -111,8 +111,8 @@ chrome.storage.local.get(['panelPos', 'presets', 'storedSid', 'assimEnabled', 'i
         </div>
 
         <style>
-            .gcc-footer-link { background: #111; color: #9edcfe; font-size: 10px; text-decoration: none; padding: 8px 0; text-align: center; font-weight: bold; transition: background 0.2s; }
-            .gcc-footer-link:hover { background: #222; color: #fff; }
+            .gcc-footer-link { background: #1f2842; color: #9edcfe; font-size: 10px; text-decoration: none; padding: 8px 0; text-align: center; font-weight: bold; transition: background 0.2s; }
+            .gcc-footer-link:hover { background: #222c4b; color: #fff; }
         </style>
     `;
     document.body.appendChild(container);
@@ -331,7 +331,7 @@ function setupLogic(container, presets, sid, assimEnabled, infectEnabled, cluste
         const btn = document.createElement('button');
         btn.innerText = `P${i}`;
         btn.title = getTooltip(presets[i]);
-        btn.style.cssText = `flex:1; padding:6px 0; cursor:pointer; border-radius:4px; border:1px solid #444; font-size:10px; background:${presets[i] ? "#2e7d32" : "#333"}; color:white; font-weight:bold;`;
+        btn.style.cssText = `flex:1; padding:6px 0; cursor:pointer; border-radius:4px; border:1px solid #444; font-size:10px; background:${presets[i] ? "#2e7d32" : "#1f2842"}; color:white; font-weight:bold;`;
 
         btn.onclick = () => {
             if (!presets[i]) return alert("Preset empty.");
