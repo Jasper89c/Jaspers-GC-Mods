@@ -31,6 +31,9 @@ A small userscript / content script for the GC mod site that adds helper UI, qui
   - `similare c.3`
   - `similare c.4`
   - `similare c.5`
+  - `tainted c.2`
+  - `tainted c.3`
+  - `tainted c.4`
 - Each sends a cluster upgrade request using the current `sid`.
 
 ### 5. Link Sync
@@ -73,8 +76,9 @@ A small userscript / content script for the GC mod site that adds helper UI, qui
   - white text
   - `11.8px Arial, Helvetica, sans-serif` font
 
-### 11. Quick Assimilate
+### 11. Quick Assimilate/infect 
 - assimilate collective planets from the manage colonies screen.
+- infect viral planets from the manage colonies screen.
 - enable/disable this feature in the helper panel if you are not playing collective.
 
 ### 12. Federation Tags
