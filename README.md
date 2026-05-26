@@ -2,6 +2,8 @@
 
 A small userscript / content script for the GC mod site that adds helper UI, quick actions, and live ship stats.
 
+![preview](preview.png)
+
 ## Features
 
 ### 1. Auto-Explore & auto-continue
