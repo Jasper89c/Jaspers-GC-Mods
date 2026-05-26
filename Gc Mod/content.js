@@ -17,7 +17,7 @@ function autoClickContinue() {
 }
 
 // === 2. MAIN EXTENSION PANEL LOGIC ===
-chrome.storage.local.get(['panelPos', 'presets', 'storedSid', 'assimEnabled', 'clusterCollapsed', 'similareCollapsed', 'viralCollapsed'], (res) => {
+chrome.storage.local.get(['panelPos', 'presets', 'storedSid', 'assimEnabled', 'clusterCollapsed', 'similareCollapsed', 'viralCollapsed', 'fedLazy', 'fedFull'], (res) => {
     const pos = res.panelPos || { top: '20px', left: 'auto', right: '20px' };
     const savedPresets = res.presets || {};
 
@@ -41,9 +41,8 @@ chrome.storage.local.get(['panelPos', 'presets', 'storedSid', 'assimEnabled', 'c
         </div>
 
         <div style="border-bottom:1px solid #333;">
-        <div style="font-size:10px; color:#aaa; margin-bottom:5px; font-weight:bold; letter-spacing:0.5px; padding:8px;">CLUSTERING</div>
             <div id="gcc-cluster-header" style="padding:8px; background:#222; cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
-                <div style="font-size:10px; color:#ff9800; font-weight:bold; letter-spacing:0.5px;">Terran/Miner/Guard/Mara</div>
+                <div style="font-size:10px; color:#ff9800; font-weight:bold; letter-spacing:0.5px;">Regular Cluster</div>
                 <span id="gcc-cluster-arrow" style="font-size:10px; color:#aaa;">▾</span>
             </div>
             <div id="gcc-cluster-body" style="padding:0 8px 8px; background:#222;">
@@ -62,7 +61,7 @@ chrome.storage.local.get(['panelPos', 'presets', 'storedSid', 'assimEnabled', 'c
                 <div style="display:flex; flex-direction:column; gap:4px; padding-top:6px;">
                     <button class="gcc-global-cluster" data-tid="1" style="background:#444; color:white; border:none; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade C.2</button>
                     <button class="gcc-global-cluster" data-tid="2" style="background:#444; color:white; border:none; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade C.3</button>
-                    <button class="gcc-global-cluster" data-tid="3" style="background:#444; color:white; border:none; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade C.4</button>                    
+                    <button class="gcc-global-cluster" data-tid="3" style="background:#444; color:white; border:none; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade C.4</button>
                     <button class="gcc-global-cluster" data-tid="7" style="background:#444; color:white; border:none; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade C.5</button>
                     <button class="gcc-global-cluster" data-tid="5" style="background:#444; color:white; border:none; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade C2</button>
                     <button class="gcc-global-cluster" data-tid="6" style="background:#444; color:white; border:none; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade C3</button>
@@ -85,9 +84,18 @@ chrome.storage.local.get(['panelPos', 'presets', 'storedSid', 'assimEnabled', 'c
 
         <div style="padding:8px; border-bottom:1px solid #333;">
             <div style="font-size:10px; color:#aaa; margin-bottom:5px; font-weight:bold; letter-spacing:0.5px;">FEATURES</div>
-            <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-size:11px; color:#ddd;">
+            <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-size:11px; color:#ddd; margin-bottom:4px;">
                 <input type="checkbox" id="gcc-assim-toggle" style="cursor:pointer;">
                 Assimilate Buttons
+            </label>
+            <div style="font-size:10px; color:#aaa; margin:6px 0 4px; font-weight:bold; letter-spacing:0.5px;">FEDERATION NAMES</div>
+            <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-size:11px; color:#ddd; margin-bottom:4px;">
+                <input type="checkbox" id="gcc-fed-lazy" style="cursor:pointer;">
+                Lazy Load (hover)
+            </label>
+            <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-size:11px; color:#ddd;">
+                <input type="checkbox" id="gcc-fed-full" style="cursor:pointer;">
+                Full Load
             </label>
         </div>
 
@@ -104,7 +112,7 @@ chrome.storage.local.get(['panelPos', 'presets', 'storedSid', 'assimEnabled', 'c
         </style>
     `;
     document.body.appendChild(container);
-    setupLogic(container, savedPresets, sid, !!res.assimEnabled, !!res.clusterCollapsed, !!res.similareCollapsed, !!res.viralCollapsed);
+    setupLogic(container, savedPresets, sid, !!res.assimEnabled, !!res.clusterCollapsed, !!res.similareCollapsed, !!res.viralCollapsed, !!res.fedLazy, !!res.fedFull);
 });
 
 async function performGlobalCluster(tid, sid) {
@@ -133,7 +141,170 @@ async function performGlobalCluster(tid, sid) {
     }
 }
 
-function setupLogic(container, presets, sid, assimEnabled, clusterCollapsed, similareCollapsed, viralCollapsed) {
+// Cache for federation names: eid -> federation name string (or '' for none)
+const fedCache = {};
+
+async function fetchFederationName(eid, sid) {
+    if (fedCache[eid] !== undefined) return fedCache[eid];
+    try {
+        const url = `i.cfm?&${sid}&f=com_intel&eid=${eid}`;
+        const response = await fetch(url, { credentials: 'same-origin' });
+        if (!response.ok) { fedCache[eid] = ''; return ''; }
+        const html = await response.text();
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        // Find the Federation row: <td>Federation</td> followed by <td>name...</td>
+        const rows = Array.from(doc.querySelectorAll('tr'));
+        let fedName = '';
+        for (const row of rows) {
+            const cells = row.querySelectorAll('td');
+            if (cells.length >= 2 && cells[0].textContent.trim() === 'Federation') {
+                // Get text content of the second cell, excluding the "More info" link text
+                const clone = cells[1].cloneNode(true);
+                const link = clone.querySelector('a');
+                if (link) link.remove();
+                fedName = clone.textContent.replace(/\u00A0/g, ' ').trim();
+                break;
+            }
+        }
+        fedCache[eid] = fedName;
+        return fedName;
+    } catch (e) {
+        fedCache[eid] = '';
+        return '';
+    }
+}
+
+let warFedCache = null;
+
+async function fetchWarFederations(sid) {
+    if (warFedCache !== null) return warFedCache;
+    try {
+        const response = await fetch(`i.cfm?&${sid}&f=fed_war`, { credentials: 'same-origin' });
+        if (!response.ok) { warFedCache = []; return []; }
+        const html = await response.text();
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const warFeds = [];
+        const table = doc.querySelector('table.gc-fed-war-table');
+        if (table) {
+            Array.from(table.querySelectorAll('tr')).forEach(row => {
+                if (row.classList.contains('Header')) return;
+                const a = row.querySelector('a');
+                if (a) {
+                    // Strip any trailing image alt text and whitespace
+                    const name = a.childNodes[0].textContent.trim();
+                    if (name) warFeds.push(name.toLowerCase());
+                }
+            });
+        }
+        warFedCache = warFeds;
+        return warFeds;
+    } catch (e) {
+        warFedCache = [];
+        return [];
+    }
+}
+
+function applyWarHighlight(row, fedName, warFeds) {
+    if (!fedName || fedName === 'No Federation' || !warFeds.length) return;
+    if (!warFeds.includes(fedName.toLowerCase())) return;
+    const attackLink = row.querySelector('a[href*="f=com_attack"]');
+    if (attackLink) {
+        attackLink.style.color = '#4caf50';
+        attackLink.style.fontWeight = 'bold';
+    }
+}
+
+function getOrCreateFedSpan(nameTd) {
+    let span = nameTd.querySelector('.gcc-fed-name');
+    if (!span) {
+        span = document.createElement('div');
+        span.className = 'gcc-fed-name';
+        span.style.cssText = 'font-size:8px; color:#81d4fa; margin-top:1px; font-style:italic;';
+        nameTd.appendChild(span);
+    }
+    return span;
+}
+
+function attachFedLazy(sid) {
+    if (!window.location.href.includes('f=rank')) return;
+    const tables = document.querySelectorAll('table.rank-results-table, table.rank-page-table');
+    if (!tables.length) return;
+
+    const rows = Array.from(tables).flatMap(table =>
+    Array.from(table.querySelectorAll('tr')).filter(r => !r.classList.contains('rank-results-header') && !r.classList.contains('Header'))
+    );
+    
+    rows.forEach(row => {
+        if (row.dataset.gccFedLazyBound) return;
+        const intelAnchor = row.querySelector('a[href*="f=com_intel"]');
+        if (!intelAnchor) return;
+        const eidMatch = intelAnchor.getAttribute('href').match(/eid=(\d+)/);
+        if (!eidMatch) return;
+        const eid = eidMatch[1];
+        const nameTd = intelAnchor.closest('td');
+        if (!nameTd) return;
+
+        intelAnchor.addEventListener('mouseenter', async () => {
+            const span = getOrCreateFedSpan(nameTd);
+            if (span.dataset.loaded) return;
+            span.textContent = '...';
+            const [name, warFeds] = await Promise.all([
+            fetchFederationName(eid, sid),
+            fetchWarFederations(sid)
+            ]);
+            span.textContent = name || 'No Federation';
+            span.dataset.loaded = '1';
+            applyWarHighlight(row, name, warFeds);
+        });
+
+        row.dataset.gccFedLazyBound = '1';
+    });
+}
+
+async function attachFedFull(sid) {
+    if (!window.location.href.includes('f=rank')) return;
+    const tables = document.querySelectorAll('table.rank-results-table, table.rank-page-table');
+    if (!tables.length) return;
+
+    const rows = Array.from(tables).flatMap(table =>
+    Array.from(table.querySelectorAll('tr')).filter(r => !r.classList.contains('rank-results-header') && !r.classList.contains('Header'))
+    );
+    // Fire all fetches in parallel
+    const tasks = rows.map(async row => {
+        if (row.dataset.gccFedFullDone) return;
+        const intelAnchor = row.querySelector('a[href*="f=com_intel"]');
+        if (!intelAnchor) return;
+        const eidMatch = intelAnchor.getAttribute('href').match(/eid=(\d+)/);
+        if (!eidMatch) return;
+        const eid = eidMatch[1];
+        const nameTd = intelAnchor.closest('td');
+        if (!nameTd) return;
+
+        const span = getOrCreateFedSpan(nameTd);
+        span.textContent = '...';
+        const [name, warFeds] = await Promise.all([
+            fetchFederationName(eid, sid),
+            fetchWarFederations(sid)
+        ]);
+        span.textContent = name || 'No Federation';
+        span.dataset.loaded = '1';
+        applyWarHighlight(row, name, warFeds);
+        row.dataset.gccFedFullDone = '1';
+    });
+
+    await Promise.all(tasks);
+}
+
+function removeFedNames() {
+    document.querySelectorAll('.gcc-fed-name').forEach(el => el.remove());
+    // Clear bound flags so they can be re-attached if re-enabled
+    document.querySelectorAll('[data-gcc-fed-lazy-bound]').forEach(el => delete el.dataset.gccFedLazyBound);
+    document.querySelectorAll('[data-gcc-fed-full-done]').forEach(el => delete el.dataset.gccFedFullDone);
+}
+
+function setupLogic(container, presets, sid, assimEnabled, clusterCollapsed, similareCollapsed, viralCollapsed, fedLazy, fedFull) {
     document.getElementById('gcc-refresh-btn').onclick = () => window.location.reload();
 
     // 1. Global Colony Cluster Logic
@@ -290,7 +461,7 @@ function setupLogic(container, presets, sid, assimEnabled, clusterCollapsed, sim
     };
 
     applyCollapse('gcc-cluster-body', 'gcc-cluster-arrow', clusterCollapsed);
-    applyCollapse('gcc-similare-body', 'gcc-similare-arrow', similareCollapsed);    
+    applyCollapse('gcc-similare-body', 'gcc-similare-arrow', similareCollapsed);
     applyCollapse('gcc-viral-body', 'gcc-viral-arrow', viralCollapsed);
 
     document.getElementById('gcc-cluster-header').addEventListener('click', () => {
@@ -309,6 +480,41 @@ function setupLogic(container, presets, sid, assimEnabled, clusterCollapsed, sim
         viralCollapsed = !viralCollapsed;
         applyCollapse('gcc-viral-body', 'gcc-viral-arrow', viralCollapsed);
         chrome.storage.local.set({ viralCollapsed });
+    });
+
+    // 12. Federation name toggles
+    const fedLazyToggle = document.getElementById('gcc-fed-lazy');
+    const fedFullToggle = document.getElementById('gcc-fed-full');
+
+    fedLazyToggle.checked = fedLazy;
+    fedFullToggle.checked = fedFull;
+
+    // Apply on load
+    if (fedLazy) attachFedLazy(sid);
+    if (fedFull) attachFedFull(sid);
+
+    fedLazyToggle.addEventListener('change', () => {
+        if (fedLazyToggle.checked) {
+            fedFullToggle.checked = false;
+            chrome.storage.local.set({ fedLazy: true, fedFull: false });
+            removeFedNames();
+            attachFedLazy(sid);
+        } else {
+            chrome.storage.local.set({ fedLazy: false });
+            removeFedNames();
+        }
+    });
+
+    fedFullToggle.addEventListener('change', () => {
+        if (fedFullToggle.checked) {
+            fedLazyToggle.checked = false;
+            chrome.storage.local.set({ fedFull: true, fedLazy: false });
+            removeFedNames();
+            attachFedFull(sid);
+        } else {
+            chrome.storage.local.set({ fedFull: false });
+            removeFedNames();
+        }
     });
 }
 
