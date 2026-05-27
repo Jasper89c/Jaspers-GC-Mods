@@ -17,7 +17,7 @@ function autoClickContinue() {
 }
 
 // === 2. MAIN EXTENSION PANEL LOGIC ===
-chrome.storage.local.get(['panelPos', 'presets', 'storedSid', 'assimEnabled', 'infectEnabled', 'clusterCollapsed', 'similareCollapsed', 'viralCollapsed', 'fedLazy', 'fedFull'], (res) => {
+chrome.storage.local.get(['panelPos', 'presets', 'storedSid', 'assimEnabled', 'infectEnabled', 'clusterCollapsed', 'similareCollapsed', 'viralCollapsed', 'fedLazy', 'fedFull', 'clusterMineral'], (res) => {
     const pos = res.panelPos || { top: '20px', left: 'auto', right: '20px' };
     const savedPresets = res.presets || {};
 
@@ -35,13 +35,26 @@ chrome.storage.local.get(['panelPos', 'presets', 'storedSid', 'assimEnabled', 'i
             <button id="gcc-refresh-btn" title="Refresh Page" style="background:#444; border:1px solid #555; color:white; cursor:pointer; border-radius:3px; padding:2px 6px; font-size:12px; line-height:1;">↻</button>
         </div>
 
+        <div id="gcc-update-banner"></div>
+
         <div style="padding:8px; border-bottom:1px solid #333;">
             <div style="font-size:10px; color:#ff9800; margin-bottom:5px; font-weight:bold; letter-spacing:0.5px;">SHIP PRESETS</div>
             <div id="gcc-btn-area" style="display:flex; justify-content:space-between; gap:2px;"></div>
         </div>
 
         <div style="border-bottom:1px solid #333;">
-            <div id="gcc-cluster-header" style="padding:8px; background:#1f2842; cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
+        <div style="padding-top: 6px; display: flex; flex-direction: column; gap: 2px;">
+        <label style="font-size: 8px; color: #aaa; font-weight: bold; letter-spacing: 0.5px;">TARGET MINERAL</label>
+        <select id="gcc-cluster-mineral" style="background: #333; color: white; border: 1px solid #555; border-radius: 3px; font-size: 10px; padding: 3px; width: 100%; cursor: pointer;">
+        <option value="1">Terran Metal</option>
+        <option value="2" selected>Red Crystal</option>
+        <option value="3">White Crystal</option>
+        <option value="4">Rutile</option>
+        <option value="5">Composite</option>
+        <option value="6">Strafez Organism</option>
+        </select>
+        </div>
+        <div id="gcc-cluster-header" style="padding:8px; background:#1f2842; cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
                 <div style="font-size:10px; color:#ff9800; font-weight:bold; letter-spacing:0.5px;">Regular Cluster</div>
                 <span id="gcc-cluster-arrow" style="font-size:10px; color:#aaa;">▾</span>
             </div>
@@ -51,35 +64,35 @@ chrome.storage.local.get(['panelPos', 'presets', 'storedSid', 'assimEnabled', 'i
                     <button class="gcc-global-cluster" data-tid="21" style="background:#1f2842; color:white; border:1px solid #444; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade Lvl 2</button>
                     <button class="gcc-global-cluster" data-tid="22" style="background:#1f2842; color:white; border:1px solid #444; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade Lvl 3</button>
                 </div>
-                <div id="gcc-cluster-status" style="font-size:9px; color:#888; text-align:center; margin-top:4px; height:10px;"></div>
-            </div>
-            <div id="gcc-similare-header" style="padding:8px; background:#1f2842; cursor:pointer; display:flex; justify-content:space-between; align-items:center; border-top:1px solid #333;">
+                </div>
+                <div id="gcc-similare-header" style="padding:8px; background:#1f2842; cursor:pointer; display:flex; justify-content:space-between; align-items:center; border-top:1px solid #333;">
                 <div style="font-size:10px; color:#ff9800; font-weight:bold; letter-spacing:0.5px;">Collective</div>
                 <span id="gcc-similare-arrow" style="font-size:10px; color:#aaa;">▾</span>
-            </div>
-            <div id="gcc-similare-body" style="padding:0 8px 8px; background:#1f2842;">
-                <div style="display:flex; flex-direction:column; gap:4px; padding-top:6px;">
-                    <button class="gcc-global-cluster" data-tid="1" style="background:#1f2842; color:white; border:1px solid #444; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade C.2</button>
-                    <button class="gcc-global-cluster" data-tid="2" style="background:#1f2842; color:white; border:1px solid #444; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade C.3</button>
-                    <button class="gcc-global-cluster" data-tid="3" style="background:#1f2842; color:white; border:1px solid #444; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade C.4</button>
-                    <button class="gcc-global-cluster" data-tid="7" style="background:#1f2842; color:white; border:1px solid #444; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade C.5</button>
-                    <button class="gcc-global-cluster" data-tid="5" style="background:#1f2842; color:white; border:1px solid #444; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade C2</button>
-                    <button class="gcc-global-cluster" data-tid="6" style="background:#1f2842; color:white; border:1px solid #444; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade C3</button>
                 </div>
-            </div>
-            <div id="gcc-viral-header" style="padding:8px; background:#1f2842; cursor:pointer; display:flex; justify-content:space-between; align-items:center; border-top:1px solid #333;">
+                <div id="gcc-similare-body" style="padding:0 8px 8px; background:#1f2842;">
+                <div style="display:flex; flex-direction:column; gap:4px; padding-top:6px;">
+                <button class="gcc-global-cluster" data-tid="1" style="background:#1f2842; color:white; border:1px solid #444; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade C.2</button>
+                <button class="gcc-global-cluster" data-tid="2" style="background:#1f2842; color:white; border:1px solid #444; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade C.3</button>
+                <button class="gcc-global-cluster" data-tid="3" style="background:#1f2842; color:white; border:1px solid #444; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade C.4</button>
+                <button class="gcc-global-cluster" data-tid="7" style="background:#1f2842; color:white; border:1px solid #444; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade C.5</button>
+                <button class="gcc-global-cluster" data-tid="5" style="background:#1f2842; color:white; border:1px solid #444; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade C2</button>
+                <button class="gcc-global-cluster" data-tid="6" style="background:#1f2842; color:white; border:1px solid #444; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade C3</button>
+                </div>
+                </div>
+                <div id="gcc-viral-header" style="padding:8px; background:#1f2842; cursor:pointer; display:flex; justify-content:space-between; align-items:center; border-top:1px solid #333;">
                 <div style="font-size:10px; color:#ff9800; font-weight:bold; letter-spacing:0.5px;">Viral</div>
                 <span id="gcc-viral-arrow" style="font-size:10px; color:#aaa;">▾</span>
-            </div>
-            <div id="gcc-viral-body" style="padding:0 8px 8px; background:#1f2842;">
-                <div style="display:flex; flex-direction:column; gap:4px; padding-top:6px;">
-                    <button class="gcc-global-cluster" data-tid="1" style="background:#1f2842; color:white; border:1px solid #444; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade C.2</button>
-                    <button class="gcc-global-cluster" data-tid="2" style="background:#1f2842; color:white; border:1px solid #444; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade C.3</button>
-                    <button class="gcc-global-cluster" data-tid="3" style="background:#1f2842; color:white; border:1px solid #444; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade C.4</button>
-                    <button class="gcc-global-cluster" data-tid="4" style="background:#1f2842; color:white; border:1px solid #444; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade C2</button>
-                    <button class="gcc-global-cluster" data-tid="5" style="background:#1f2842; color:white; border:1px solid #444; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade C3</button>
                 </div>
-            </div>
+                <div id="gcc-viral-body" style="padding:0 8px 8px; background:#1f2842;">
+                <div style="display:flex; flex-direction:column; gap:4px; padding-top:6px;">
+                <button class="gcc-global-cluster" data-tid="1" style="background:#1f2842; color:white; border:1px solid #444; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade C.2</button>
+                <button class="gcc-global-cluster" data-tid="2" style="background:#1f2842; color:white; border:1px solid #444; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade C.3</button>
+                <button class="gcc-global-cluster" data-tid="3" style="background:#1f2842; color:white; border:1px solid #444; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade C.4</button>
+                <button class="gcc-global-cluster" data-tid="4" style="background:#1f2842; color:white; border:1px solid #444; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade C2</button>
+                <button class="gcc-global-cluster" data-tid="5" style="background:#1f2842; color:white; border:1px solid #444; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade C3</button>
+                </div>
+                </div>
+                <div id="gcc-cluster-status" style="font-size:9px; color:#888; text-align:center; margin-top:4px; height:10px;"></div>
         </div>
 
         <div style="padding:8px; border-bottom:1px solid #333;">
@@ -120,6 +133,7 @@ chrome.storage.local.get(['panelPos', 'presets', 'storedSid', 'assimEnabled', 'i
     setupLogic(container, savedPresets, sid, !!res.assimEnabled, !!res.infectEnabled, !!res.clusterCollapsed, !!res.similareCollapsed, !!res.viralCollapsed, !!res.fedLazy, !!res.fedFull);
 });
 
+// Replace your old performGlobalCluster function with this one:
 async function performGlobalCluster(tid, sid) {
     const status = document.getElementById('gcc-cluster-status');
     status.innerText = "⏳ Upgrading...";
@@ -127,10 +141,14 @@ async function performGlobalCluster(tid, sid) {
 
     const url = `i.cfm?&${sid}&f=com_colupgrade&tid=${tid}&con=1`;
 
+    // Grabs the current chosen value from our newly created element selection model
+    const mineralSelect = document.getElementById('gcc-cluster-mineral');
+    const selectedGoodId = mineralSelect ? mineralSelect.value : '2'; // Falls back to '2' if not found
+
     try {
         const response = await fetch(url, {
             method: 'POST',
-            body: new URLSearchParams({ 'goodid': '2' })
+            body: new URLSearchParams({ 'goodid': selectedGoodId }) // Uses the selected value parameter
         });
 
         if (response.ok) {
@@ -311,6 +329,9 @@ function removeFedNames() {
 
 function setupLogic(container, presets, sid, assimEnabled, infectEnabled, clusterCollapsed, similareCollapsed, viralCollapsed, fedLazy, fedFull) {
     document.getElementById('gcc-refresh-btn').onclick = () => window.location.reload();
+
+    // Trigger the update check automatically
+    checkForUpdates();
 
     // Add this line inside your setupLogic execution function block in content.js
     const dashLink = document.getElementById('lnk-dashboard');
@@ -564,6 +585,19 @@ function setupLogic(container, presets, sid, assimEnabled, infectEnabled, cluste
             removeFedNames();
         }
     });
+
+    const mineralSelect = document.getElementById('gcc-cluster-mineral');
+    if (mineralSelect) {
+        // If a saved state exists in local storage, initialize it
+        chrome.storage.local.get(['clusterMineral'], (stored) => {
+            if (stored.clusterMineral) mineralSelect.value = stored.clusterMineral;
+        });
+
+        // Save configuration settings dynamically when clicked
+        mineralSelect.addEventListener('change', () => {
+            chrome.storage.local.set({ clusterMineral: mineralSelect.value });
+        });
+    }
 }
 
 function addDisbandQuickCells() {
@@ -1196,4 +1230,46 @@ function addInfectButtons(sid) {
         row.appendChild(td);
         row.dataset.gccInfectAdded = '1';
     });
+}
+
+async function checkForUpdates() {
+    const banner = document.getElementById('gcc-update-banner');
+    if (!banner) return;
+
+    // 1. Define your GitHub target details
+    const repoOwner = "Jasper89c"; 
+    const repoName = "Jaspers-GC-Mods";
+    const githubLink = `https://github.com/${repoOwner}/${repoName}/releases`;
+
+    // 2. Extract current installed version safely from manifest context
+    const currentVersion = chrome.runtime.getManifest().version;
+
+    try {
+        // Fetch latest version string from GitHub Releases API
+        const response = await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/releases/latest`);
+        if (!response.ok) return;
+
+        const data = await response.json();
+        // GitHub tags are usually prefixed with a "v" (e.g., "v1.1" or "1.1")
+        const latestVersion = data.tag_name.replace(/v/gi, '').trim();
+
+        // simple check to see if GitHub version is greater than installed version
+        if (latestVersion !== currentVersion && currentVersion < latestVersion) {
+            banner.innerHTML = `
+                <div style="background: #ff9800; color: #000; font-size: 10px; font-weight: bold; text-align: center; padding: 6px; border-bottom: 1px solid #444; animation: pulse 2s infinite;">
+                    ⚠️ New Version Available (v${latestVersion})<br>
+                    <a href="${githubLink}" target="_blank" style="color: #004d40; text-decoration: underline; display: inline-block; margin-top: 3px;">Click here to download</a>
+                </div>
+                <style>
+                    @keyframes pulse {
+                        0% { opacity: 0.9; }
+                        50% { opacity: 1; }
+                        100% { opacity: 0.9; }
+                    }
+                </style>
+            `;
+        }
+    } catch (e) {
+        console.log("GC Mods Update Check Failed: ", e);
+    }
 }

@@ -3,7 +3,8 @@
   "name": "Jaspers GC Mods",
   "version": "1.0",
   "permissions": [
-    "storage"
+    "storage",
+    "https://api.github.com/*"
   ],
   "options_ui": {
     "page": "dashboard.html",
