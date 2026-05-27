@@ -38,13 +38,8 @@ A small userscript / content script for the GC mod site that adds helper UI, qui
   - `tainted c.4`
 - Each sends a cluster upgrade request using the current `sid`.
 
-### 5. Link Sync
-- The panel footer links are rewritten to include the session ID (`sid`).
-- Links included:
-  - `Cmd`
-  - `Build`
-  - `Fleet`
-  - `Rank`
+### 5. Counter Attacks
+- the Attack button on rankings will now display in a red colour to show you have a counter on that target.
 
 ### 6. Drag and Drop Panel
 - The helper panel can be dragged around the screen.
