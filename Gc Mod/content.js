@@ -43,56 +43,66 @@ chrome.storage.local.get(['panelPos', 'presets', 'storedSid', 'assimEnabled', 'i
         </div>
 
         <div style="border-bottom:1px solid #333;">
-        <div style="padding-top: 6px; display: flex; flex-direction: column; gap: 2px;">
-        <label style="font-size: 8px; color: #aaa; font-weight: bold; letter-spacing: 0.5px;">TARGET MINERAL</label>
-        <select id="gcc-cluster-mineral" style="background: #333; color: white; border: 1px solid #555; border-radius: 3px; font-size: 10px; padding: 3px; width: 100%; cursor: pointer;">
-        <option value="1">Terran Metal</option>
-        <option value="2" selected>Red Crystal</option>
-        <option value="3">White Crystal</option>
-        <option value="4">Rutile</option>
-        <option value="5">Composite</option>
-        <option value="6">Strafez Organism</option>
-        </select>
-        </div>
-        <div id="gcc-cluster-header" style="padding:8px; background:#1f2842; cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
-                <div style="font-size:10px; color:#ff9800; font-weight:bold; letter-spacing:0.5px;">Regular Cluster</div>
-                <span id="gcc-cluster-arrow" style="font-size:10px; color:#aaa;">▾</span>
+            <div style="padding: 6px 8px 0; display: flex; flex-direction: column; gap: 2px;">
+                <label style="font-size: 8px; color: #aaa; font-weight: bold; letter-spacing: 0.5px;">TARGET MINERAL</label>
+                <select id="gcc-cluster-mineral" style="background: #333; color: white; border: 1px solid #555; border-radius: 3px; font-size: 10px; padding: 3px; width: 100%; cursor: pointer;">
+                    <option value="1">Terran Metal</option>
+                    <option value="2" selected>Red Crystal</option>
+                    <option value="3">White Crystal</option>
+                    <option value="4">Rutile</option>
+                    <option value="5">Composite</option>
+                    <option value="6">Strafez Organism</option>
+                </select>
             </div>
-            <div id="gcc-cluster-body" style="padding:0 8px 8px; background:#1f2842;">
-                <div style="display:flex; flex-direction:column; gap:4px; padding-top:6px;">
-                    <button class="gcc-global-cluster" data-tid="20" style="background:#1f2842; color:white; border:1px solid #444; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade Lvl 1</button>
-                    <button class="gcc-global-cluster" data-tid="21" style="background:#1f2842; color:white; border:1px solid #444; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade Lvl 2</button>
-                    <button class="gcc-global-cluster" data-tid="22" style="background:#1f2842; color:white; border:1px solid #444; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade Lvl 3</button>
+            
+            <div id="gcc-reg-wrapper">
+                <div id="gcc-cluster-header" style="padding:8px; background:#1f2842; cursor:pointer; display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
+                    <div style="font-size:10px; color:#ff9800; font-weight:bold; letter-spacing:0.5px;">Regular Cluster</div>
+                    <span id="gcc-cluster-arrow" style="font-size:10px; color:#aaa;">▾</span>
                 </div>
+                <div id="gcc-cluster-body" style="padding:0 8px 8px; background:#1f2842;">
+                    <div style="display:flex; flex-direction:column; gap:4px; padding-top:6px;">
+                        <button class="gcc-global-cluster" data-tid="20" style="background:#1f2842; color:white; border:1px solid #444; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade Lvl 1</button>
+                        <button class="gcc-global-cluster" data-tid="21" style="background:#1f2842; color:white; border:1px solid #444; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade Lvl 2</button>
+                        <button class="gcc-global-cluster" data-tid="22" style="background:#1f2842; color:white; border:1px solid #444; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade Lvl 3</button>
+                    </div>
                 </div>
+            </div>
+
+            <div id="gcc-coll-wrapper">
                 <div id="gcc-similare-header" style="padding:8px; background:#1f2842; cursor:pointer; display:flex; justify-content:space-between; align-items:center; border-top:1px solid #333;">
-                <div style="font-size:10px; color:#ff9800; font-weight:bold; letter-spacing:0.5px;">Collective</div>
-                <span id="gcc-similare-arrow" style="font-size:10px; color:#aaa;">▾</span>
+                    <div style="font-size:10px; color:#ff9800; font-weight:bold; letter-spacing:0.5px;">Collective</div>
+                    <span id="gcc-similare-arrow" style="font-size:10px; color:#aaa;">▾</span>
                 </div>
                 <div id="gcc-similare-body" style="padding:0 8px 8px; background:#1f2842;">
-                <div style="display:flex; flex-direction:column; gap:4px; padding-top:6px;">
-                <button class="gcc-global-cluster" data-tid="1" style="background:#1f2842; color:white; border:1px solid #444; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade C.2</button>
-                <button class="gcc-global-cluster" data-tid="2" style="background:#1f2842; color:white; border:1px solid #444; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade C.3</button>
-                <button class="gcc-global-cluster" data-tid="3" style="background:#1f2842; color:white; border:1px solid #444; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade C.4</button>
-                <button class="gcc-global-cluster" data-tid="7" style="background:#1f2842; color:white; border:1px solid #444; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade C.5</button>
-                <button class="gcc-global-cluster" data-tid="5" style="background:#1f2842; color:white; border:1px solid #444; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade C2</button>
-                <button class="gcc-global-cluster" data-tid="6" style="background:#1f2842; color:white; border:1px solid #444; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade C3</button>
+                    <div style="display:flex; flex-direction:column; gap:4px; padding-top:6px;">
+                        <button class="gcc-global-cluster" data-tid="1" style="background:#1f2842; color:white; border:1px solid #444; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade C.2</button>
+                        <button class="gcc-global-cluster" data-tid="2" style="background:#1f2842; color:white; border:1px solid #444; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade C.3</button>
+                        <button class="gcc-global-cluster" data-tid="3" style="background:#1f2842; color:white; border:1px solid #444; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade C.4</button>
+                        <button class="gcc-global-cluster" data-tid="7" style="background:#1f2842; color:white; border:1px solid #444; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade C.5</button>
+                        <button class="gcc-global-cluster" data-tid="5" style="background:#1f2842; color:white; border:1px solid #444; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade C2</button>
+                        <button class="gcc-global-cluster" data-tid="6" style="background:#1f2842; color:white; border:1px solid #444; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade C3</button>
+                    </div>
                 </div>
-                </div>
+            </div>
+
+            <div id="gcc-viral-wrapper">
                 <div id="gcc-viral-header" style="padding:8px; background:#1f2842; cursor:pointer; display:flex; justify-content:space-between; align-items:center; border-top:1px solid #333;">
-                <div style="font-size:10px; color:#ff9800; font-weight:bold; letter-spacing:0.5px;">Viral</div>
-                <span id="gcc-viral-arrow" style="font-size:10px; color:#aaa;">▾</span>
+                    <div style="font-size:10px; color:#ff9800; font-weight:bold; letter-spacing:0.5px;">Viral</div>
+                    <span id="gcc-viral-arrow" style="font-size:10px; color:#aaa;">▾</span>
                 </div>
                 <div id="gcc-viral-body" style="padding:0 8px 8px; background:#1f2842;">
-                <div style="display:flex; flex-direction:column; gap:4px; padding-top:6px;">
-                <button class="gcc-global-cluster" data-tid="1" style="background:#1f2842; color:white; border:1px solid #444; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade C.2</button>
-                <button class="gcc-global-cluster" data-tid="2" style="background:#1f2842; color:white; border:1px solid #444; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade C.3</button>
-                <button class="gcc-global-cluster" data-tid="3" style="background:#1f2842; color:white; border:1px solid #444; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade C.4</button>
-                <button class="gcc-global-cluster" data-tid="4" style="background:#1f2842; color:white; border:1px solid #444; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade C2</button>
-                <button class="gcc-global-cluster" data-tid="5" style="background:#1f2842; color:white; border:1px solid #444; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade C3</button>
+                    <div style="display:flex; flex-direction:column; gap:4px; padding-top:6px;">
+                        <button class="gcc-global-cluster" data-tid="1" style="background:#1f2842; color:white; border:1px solid #444; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade C.2</button>
+                        <button class="gcc-global-cluster" data-tid="2" style="background:#1f2842; color:white; border:1px solid #444; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade C.3</button>
+                        <button class="gcc-global-cluster" data-tid="3" style="background:#1f2842; color:white; border:1px solid #444; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade C.4</button>
+                        <button class="gcc-global-cluster" data-tid="4" style="background:#1f2842; color:white; border:1px solid #444; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade C2</button>
+                        <button class="gcc-global-cluster" data-tid="5" style="background:#1f2842; color:white; border:1px solid #444; font-size:10px; padding:6px; cursor:pointer; border-radius:3px; text-align:left;">⏫ Upgrade C3</button>
+                    </div>
                 </div>
-                </div>
-                <div id="gcc-cluster-status" style="font-size:9px; color:#888; text-align:center; margin-top:4px; height:10px;"></div>
+            </div>
+
+            <div id="gcc-cluster-status" style="font-size:9px; color:#888; text-align:center; margin-top:4px; height:10px; padding-bottom:4px;"></div>
         </div>
 
         <div style="padding:8px; border-bottom:1px solid #333;">
@@ -520,35 +530,47 @@ function setupLogic(container, presets, sid, assimEnabled, infectEnabled, cluste
         autoClickContinue();
     } catch(e) {}
 
-    // 11. Collapsible cluster sections
-    const applyCollapse = (bodyId, arrowId, collapsed) => {
+    // === 11. Core Helper Section HTML Visibility Controls ===
+    
+    // Controls total removal from HTML layout via your Dashboard switches
+    const applyVisibility = (wrapperId, isHiddenFromDashboard) => {
+        const wrapper = document.getElementById(wrapperId);
+        if (wrapper) {
+            wrapper.style.display = isHiddenFromDashboard ? 'none' : 'block';
+        }
+    };
+
+    applyVisibility('gcc-reg-wrapper', clusterCollapsed);
+    applyVisibility('gcc-coll-wrapper', similareCollapsed);
+    applyVisibility('gcc-viral-wrapper', viralCollapsed);
+
+    // Controls the drawer collapsing mechanics within visible segments
+    const applyCollapse = (bodyId, arrowId, isCollapsed) => {
         const body = document.getElementById(bodyId);
         const arrow = document.getElementById(arrowId);
         if (!body || !arrow) return;
-        body.style.display = collapsed ? 'none' : 'block';
-        arrow.textContent = collapsed ? '▸' : '▾';
+        body.style.display = isCollapsed ? 'none' : 'block';
+        arrow.textContent = isCollapsed ? '▸' : '▾';
     };
 
-    applyCollapse('gcc-cluster-body', 'gcc-cluster-arrow', clusterCollapsed);
-    applyCollapse('gcc-similare-body', 'gcc-similare-arrow', similareCollapsed);
-    applyCollapse('gcc-viral-body', 'gcc-viral-arrow', viralCollapsed);
+    // Keep track of independent inner manual expand states
+    let regInnerCollapsed = false;
+    let collInnerCollapsed = false;
+    let viralInnerCollapsed = false;
 
     document.getElementById('gcc-cluster-header').addEventListener('click', () => {
-        clusterCollapsed = !clusterCollapsed;
-        applyCollapse('gcc-cluster-body', 'gcc-cluster-arrow', clusterCollapsed);
-        chrome.storage.local.set({ clusterCollapsed });
+        regInnerCollapsed = !regInnerCollapsed;
+        applyCollapse('gcc-cluster-body', 'gcc-cluster-arrow', regInnerCollapsed);
     });
 
     document.getElementById('gcc-similare-header').addEventListener('click', () => {
-        similareCollapsed = !similareCollapsed;
-        applyCollapse('gcc-similare-body', 'gcc-similare-arrow', similareCollapsed);
-        chrome.storage.local.set({ similareCollapsed });
+        collInnerCollapsed = !collInnerCollapsed;
+        applyCollapse('gcc-similare-body', 'gcc-similare-arrow', collInnerCollapsed);
     });
 
     document.getElementById('gcc-viral-header').addEventListener('click', () => {
-        viralCollapsed = !viralCollapsed;
-        applyCollapse('gcc-viral-body', 'gcc-viral-arrow', viralCollapsed);
-        chrome.storage.local.set({ viralCollapsed });
+        viralInnerCollapsed = !viralInnerCollapsed;
+        applyCollapse('gcc-viral-body', 'gcc-viral-arrow', viralInnerCollapsed);
     });
 
     // 12. Federation name toggles
