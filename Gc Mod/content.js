@@ -45,7 +45,7 @@ chrome.storage.local.get(['panelPos', 'presets', 'storedSid', 'assimEnabled', 'i
         <div style="border-bottom:1px solid #333;">
             <div style="padding: 6px 8px 0; display: flex; flex-direction: column; gap: 2px;">
                 <label style="font-size: 8px; color: #aaa; font-weight: bold; letter-spacing: 0.5px;">TARGET MINERAL</label>
-                <select id="gcc-cluster-mineral" style="background: #333; color: white; border: 1px solid #555; border-radius: 3px; font-size: 10px; padding: 3px; width: 100%; cursor: pointer;">
+                <select id="gcc-cluster-mineral" style="background: #1f2842; color: white; border: 1px solid #555; border-radius: 3px; font-size: 10px; padding: 3px; width: 100%; cursor: pointer;">
                     <option value="1">Terran Metal</option>
                     <option value="2" selected>Red Crystal</option>
                     <option value="3">White Crystal</option>
@@ -220,13 +220,71 @@ async function fetchFederationName(eid, sid) {
         return '';
     }
 }
-
 let warFedCache = null;
+let counterCache = null;
+
+// Helper to extract session variables out of active frame locations
+function getGcSessionId(sid) {
+    if (sid && sid.trim().length > 0) return sid;
+    const match = window.location.href.match(/i\.cfm\?&?([\w\d\-=\+]+)&/);
+    return match ? match[1] : '';
+}
+
+// Background silent fetch pointing directly to the f=rank2&ty=3 retal engine
+async function fetchActiveCounters(sid) {
+    if (counterCache !== null) return counterCache;
+    try {
+        const cleanSid = getGcSessionId(sid);
+        // Direct GET fetch using the precise query location provided
+        const url = cleanSid ? `i.cfm?&${cleanSid}&f=rank2&ty=3` : `i.cfm?f=rank2&ty=3`;
+        
+        console.log(`[GC Helper] Silently scanning retal matrix via: ${url}`);
+        const response = await fetch(url, { credentials: 'same-origin' });
+        if (!response.ok) { counterCache = []; return []; }
+        
+        const html = await response.text();
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const counterUids = [];
+        
+        // Find the specific data rows inside the retal document layout
+        const rows = doc.querySelectorAll('tr.table_row1, tr.table_row2');
+        
+        rows.forEach(row => {
+            // Find links that explicitly contain player profile (intel) or attack endpoints
+            const playerLinks = row.querySelectorAll('a[href*="eid="], a[href*="uid="]');
+            
+            playerLinks.forEach(link => {
+                const hrefStr = link.getAttribute('href') || '';
+                
+                // Isolates numbers preceded strictly by the player reference tokens
+                const match = hrefStr.match(/[=?&](?:uid|eid|amp;uid|amp;eid)=(\d+)(?:&|$)/);
+                if (match) {
+                    const extractedId = match[1];
+                    // Skip matching the session key
+                    if (extractedId && extractedId !== cleanSid && !counterUids.includes(extractedId)) {
+                        counterUids.push(extractedId);
+                    }
+                }
+            });
+        });
+
+        console.log(`[GC Helper] Successfully isolated ${counterUids.length} genuine counter targets.`);
+        counterCache = counterUids;
+        return counterUids;
+    } catch (e) {
+        console.error("[GC Helper] Counter parser failure:", e);
+        counterCache = [];
+        return [];
+    }
+}
 
 async function fetchWarFederations(sid) {
     if (warFedCache !== null) return warFedCache;
     try {
-        const response = await fetch(`i.cfm?&${sid}&f=fed_war`, { credentials: 'same-origin' });
+        const cleanSid = getGcSessionId(sid);
+        const url = cleanSid ? `i.cfm?&${cleanSid}&f=fed_war` : `i.cfm?f=fed_war`;
+        const response = await fetch(url, { credentials: 'same-origin' });
         if (!response.ok) { warFedCache = []; return []; }
         const html = await response.text();
         const parser = new DOMParser();
@@ -238,7 +296,6 @@ async function fetchWarFederations(sid) {
                 if (row.classList.contains('Header')) return;
                 const a = row.querySelector('a');
                 if (a) {
-                    // Strip any trailing image alt text and whitespace
                     const name = a.childNodes[0].textContent.trim();
                     if (name) warFeds.push(name.toLowerCase());
                 }
@@ -252,13 +309,37 @@ async function fetchWarFederations(sid) {
     }
 }
 
-function applyWarHighlight(row, fedName, warFeds) {
-    if (!fedName || fedName === 'No Federation' || !warFeds.length) return;
-    if (!warFeds.includes(fedName.toLowerCase())) return;
+// Applies priorities correctly: Red Counter > Green Fed War > Default styling
+function applyWarHighlight(row, fedName, warFeds, activeCounters) {
     const attackLink = row.querySelector('a[href*="f=com_attack"]');
-    if (attackLink) {
-        attackLink.style.color = '#4caf50';
-        attackLink.style.fontWeight = 'bold';
+    if (!attackLink) return;
+
+    const uidMatch = attackLink.getAttribute('href').match(/[=?&](?:uid|eid)=(\d+)/);
+    const uid = uidMatch ? uidMatch[1] : null;
+
+    // PRIORITY 1: RED COUNTER HIGHLIGHT
+    if (uid && activeCounters.includes(uid)) {
+        attackLink.style.setProperty('color', '#ff3333', 'important'); 
+        attackLink.style.setProperty('font-weight', 'bold', 'important');
+        attackLink.title = "⚠️ CRITICAL: Active Counter-Attack Available!";
+        return; 
+    }
+
+    // PRIORITY 2: GREEN FEDERATION WAR STATE
+    if (fedName && fedName !== 'No Federation' && warFeds.length) {
+        if (warFeds.includes(fedName.toLowerCase())) {
+            attackLink.style.setProperty('color', '#4caf50', 'important');
+            attackLink.style.setProperty('font-weight', 'bold', 'important');
+            attackLink.title = "⚔️ Federation War Target";
+            return;
+        }
+    }
+
+    // RESET: Clear colors if user doesn't fit either target description
+    if (!row.dataset.gccFedLazyBound && !row.dataset.gccFedFullDone) {
+        attackLink.style.removeProperty('color');
+        attackLink.style.removeProperty('font-weight');
+        attackLink.title = "";
     }
 }
 
@@ -273,16 +354,21 @@ function getOrCreateFedSpan(nameTd) {
     return span;
 }
 
-function attachFedLazy(sid) {
+async function attachFedLazy(sid) {
     if (!window.location.href.includes('f=rank')) return;
+    
+    const activeCounters = await fetchActiveCounters(sid);
+
     const tables = document.querySelectorAll('table.rank-results-table, table.rank-page-table');
     if (!tables.length) return;
 
     const rows = Array.from(tables).flatMap(table =>
-    Array.from(table.querySelectorAll('tr')).filter(r => !r.classList.contains('rank-results-header') && !r.classList.contains('Header'))
+        Array.from(table.querySelectorAll('tr')).filter(r => !r.classList.contains('rank-results-header') && !r.classList.contains('Header'))
     );
     
     rows.forEach(row => {
+        applyWarHighlight(row, null, [], activeCounters);
+
         if (row.dataset.gccFedLazyBound) return;
         const intelAnchor = row.querySelector('a[href*="f=com_intel"]');
         if (!intelAnchor) return;
@@ -296,13 +382,19 @@ function attachFedLazy(sid) {
             const span = getOrCreateFedSpan(nameTd);
             if (span.dataset.loaded) return;
             span.textContent = '...';
-            const [name, warFeds] = await Promise.all([
-            fetchFederationName(eid, sid),
-            fetchWarFederations(sid)
-            ]);
-            span.textContent = name || 'No Federation';
-            span.dataset.loaded = '1';
-            applyWarHighlight(row, name, warFeds);
+            try {
+                const fedNameTask = typeof fetchFederationName === 'function' ? fetchFederationName(eid, sid) : Promise.resolve(null);
+                const [name, warFeds] = await Promise.all([
+                    fedNameTask,
+                    fetchWarFederations(sid)
+                ]);
+                
+                span.textContent = name || 'No Federation';
+                span.dataset.loaded = '1';
+                applyWarHighlight(row, name, warFeds, activeCounters);
+            } catch(err) {
+                span.textContent = 'Error';
+            }
         });
 
         row.dataset.gccFedLazyBound = '1';
@@ -311,13 +403,16 @@ function attachFedLazy(sid) {
 
 async function attachFedFull(sid) {
     if (!window.location.href.includes('f=rank')) return;
+    
+    const activeCounters = await fetchActiveCounters(sid);
+
     const tables = document.querySelectorAll('table.rank-results-table, table.rank-page-table');
     if (!tables.length) return;
 
     const rows = Array.from(tables).flatMap(table =>
-    Array.from(table.querySelectorAll('tr')).filter(r => !r.classList.contains('rank-results-header') && !r.classList.contains('Header'))
+        Array.from(table.querySelectorAll('tr')).filter(r => !r.classList.contains('rank-results-header') && !r.classList.contains('Header'))
     );
-    // Fire all fetches in parallel
+
     const tasks = rows.map(async row => {
         if (row.dataset.gccFedFullDone) return;
         const intelAnchor = row.querySelector('a[href*="f=com_intel"]');
@@ -330,14 +425,19 @@ async function attachFedFull(sid) {
 
         const span = getOrCreateFedSpan(nameTd);
         span.textContent = '...';
-        const [name, warFeds] = await Promise.all([
-            fetchFederationName(eid, sid),
-            fetchWarFederations(sid)
-        ]);
-        span.textContent = name || 'No Federation';
-        span.dataset.loaded = '1';
-        applyWarHighlight(row, name, warFeds);
-        row.dataset.gccFedFullDone = '1';
+        try {
+            const fedNameTask = typeof fetchFederationName === 'function' ? fetchFederationName(eid, sid) : Promise.resolve(null);
+            const [name, warFeds] = await Promise.all([
+                fedNameTask,
+                fetchWarFederations(sid)
+            ]);
+            span.textContent = name || 'No Federation';
+            span.dataset.loaded = '1';
+            applyWarHighlight(row, name, warFeds, activeCounters);
+            row.dataset.gccFedFullDone = '1';
+        } catch(err) {
+            span.textContent = 'Error';
+        }
     });
 
     await Promise.all(tasks);
@@ -345,7 +445,6 @@ async function attachFedFull(sid) {
 
 function removeFedNames() {
     document.querySelectorAll('.gcc-fed-name').forEach(el => el.remove());
-    // Clear bound flags so they can be re-attached if re-enabled
     document.querySelectorAll('[data-gcc-fed-lazy-bound]').forEach(el => delete el.dataset.gccFedLazyBound);
     document.querySelectorAll('[data-gcc-fed-full-done]').forEach(el => delete el.dataset.gccFedFullDone);
 }
