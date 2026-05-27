@@ -105,32 +105,45 @@ chrome.storage.local.get(['panelPos', 'presets', 'storedSid', 'assimEnabled', 'i
             <div id="gcc-cluster-status" style="font-size:9px; color:#888; text-align:center; margin-top:4px; height:10px; padding-bottom:4px;"></div>
         </div>
 
-        <div style="padding:8px; border-bottom:1px solid #333;">
-            <div style="font-size:10px; color:#ff9800; margin-bottom:5px; font-weight:bold; letter-spacing:0.5px;">FEATURES</div>
-            <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-size:11px; color:#ddd; margin-bottom:4px;">
-                <input type="checkbox" id="gcc-assim-toggle" style="cursor:pointer;">
-                Assimilate Buttons
-            </label>
-            <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-size:11px; color:#ddd; margin-bottom:4px;">
-                <input type="checkbox" id="gcc-infect-toggle" style="cursor:pointer;">
-                Infect Buttons
-            </label>
-            <div style="font-size:10px; color:#ff9800; margin:6px 0 4px; font-weight:bold; letter-spacing:0.5px;">FEDERATION NAMES</div>
-            <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-size:11px; color:#ddd; margin-bottom:4px;">
-                <input type="checkbox" id="gcc-fed-lazy" style="cursor:pointer;">
-                Lazy Load (hover)
-            </label>
-            <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-size:11px; color:#ddd;">
-                <input type="checkbox" id="gcc-fed-full" style="cursor:pointer;">
-                Full Load
-            </label>
+        <div style="border-bottom:1px solid #333;">
+            <div id="gcc-features-header" style="padding:8px; background:#1f2842; cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
+                <div style="font-size:10px; color:#ff9800; font-weight:bold; letter-spacing:0.5px;">FEATURES</div>
+                <span id="gcc-features-arrow" style="font-size:10px; color:#aaa;">▾</span>
+            </div>
+            <div id="gcc-features-body" style="padding:0 8px 8px; background:#1f2842;">
+                <div style="display:flex; flex-direction:column; gap:4px; padding-top:6px;">
+                    <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-size:11px; color:#ddd; margin-bottom:4px;">
+                        <input type="checkbox" id="gcc-assim-toggle" style="cursor:pointer;">
+                        Assimilate Buttons
+                    </label>
+                    <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-size:11px; color:#ddd;">
+                        <input type="checkbox" id="gcc-infect-toggle" style="cursor:pointer;">
+                        Infect Buttons
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <div style="border-bottom:1px solid #333;">
+            <div id="gcc-fed-header" style="padding:8px; background:#1f2842; cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
+                <div style="font-size:10px; color:#ff9800; font-weight:bold; letter-spacing:0.5px;">FEDERATION NAMES</div>
+                <span id="gcc-fed-arrow" style="font-size:10px; color:#aaa;">▾</span>
+            </div>
+            <div id="gcc-fed-body" style="padding:0 8px 8px; background:#1f2842;">
+                <div style="display:flex; flex-direction:column; gap:4px; padding-top:6px;">
+                    <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-size:11px; color:#ddd; margin-bottom:4px;">
+                        <input type="checkbox" id="gcc-fed-lazy" style="cursor:pointer;">
+                        Lazy Load (hover)
+                    </label>
+                    <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-size:11px; color:#ddd;">
+                        <input type="checkbox" id="gcc-fed-full" style="cursor:pointer;">
+                        Full Load
+                    </label>
+                </div>
+            </div>
         </div>
 
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1px; background:#444; border-top:1px solid #444;">
-            <a href="i.cfm?f=com_empire&cm=3" id="lnk-cmd" class="gcc-footer-link">Cmd</a>
-            <a href="i.cfm?f=com_ship" id="lnk-build" class="gcc-footer-link">Build</a>
-            <a href="i.cfm?f=com_disband" id="lnk-manage" class="gcc-footer-link">Fleet</a>
-            <a href="i.cfm?f=rank" id="lnk-rank" class="gcc-footer-link">Rank</a>
             <a href="#" id="lnk-dashboard" class="gcc-footer-link" style="grid-column: span 2;">Dashboard</a>
         </div>
 
@@ -530,9 +543,9 @@ function setupLogic(container, presets, sid, assimEnabled, infectEnabled, cluste
         autoClickContinue();
     } catch(e) {}
 
-    // === 11. Core Helper Section HTML Visibility Controls ===
+    // === 11. Core Helper Section HTML Visibility & Persistent Collapse Controls ===
     
-    // Controls total removal from HTML layout via your Dashboard switches
+    // 1. Controls total removal from HTML layout via your Dashboard switches
     const applyVisibility = (wrapperId, isHiddenFromDashboard) => {
         const wrapper = document.getElementById(wrapperId);
         if (wrapper) {
@@ -544,7 +557,7 @@ function setupLogic(container, presets, sid, assimEnabled, infectEnabled, cluste
     applyVisibility('gcc-coll-wrapper', similareCollapsed);
     applyVisibility('gcc-viral-wrapper', viralCollapsed);
 
-    // Controls the drawer collapsing mechanics within visible segments
+    // 2. Controls internal slide drawers for remaining panels
     const applyCollapse = (bodyId, arrowId, isCollapsed) => {
         const body = document.getElementById(bodyId);
         const arrow = document.getElementById(arrowId);
@@ -553,26 +566,62 @@ function setupLogic(container, presets, sid, assimEnabled, infectEnabled, cluste
         arrow.textContent = isCollapsed ? '▸' : '▾';
     };
 
-    // Keep track of independent inner manual expand states
-    let regInnerCollapsed = false;
-    let collInnerCollapsed = false;
-    let viralInnerCollapsed = false;
+    // Pull saved collapse memory for ALL sections, defaulting to false (open) if not set yet
+    chrome.storage.local.get([
+        'regManualCollapsed', 
+        'collManualCollapsed', 
+        'viralManualCollapsed', 
+        'featuresCollapsed', 
+        'fedCollapsed'
+    ], (result) => {
+        let regInner = result.regManualCollapsed || false;
+        let collInner = result.collManualCollapsed || false;
+        let viralInner = result.viralManualCollapsed || false;
+        let featuresCollapsed = result.featuresCollapsed || false;
+        let fedCollapsed = result.fedCollapsed || false;
 
-    document.getElementById('gcc-cluster-header').addEventListener('click', () => {
-        regInnerCollapsed = !regInnerCollapsed;
-        applyCollapse('gcc-cluster-body', 'gcc-cluster-arrow', regInnerCollapsed);
+        // Apply saved visibility configurations immediately on load
+        applyCollapse('gcc-cluster-body', 'gcc-cluster-arrow', regInner);
+        applyCollapse('gcc-similare-body', 'gcc-similare-arrow', collInner);
+        applyCollapse('gcc-viral-body', 'gcc-viral-arrow', viralInner);
+        applyCollapse('gcc-features-body', 'gcc-features-arrow', featuresCollapsed);
+        applyCollapse('gcc-fed-body', 'gcc-fed-arrow', fedCollapsed);
+
+        // Click triggers for Regular Cluster (Saves state)
+        document.getElementById('gcc-cluster-header').onclick = () => { 
+            regInner = !regInner; 
+            applyCollapse('gcc-cluster-body', 'gcc-cluster-arrow', regInner); 
+            chrome.storage.local.set({ regManualCollapsed: regInner });
+        };
+
+        // Click triggers for Collective Cluster (Saves state)
+        document.getElementById('gcc-similare-header').onclick = () => { 
+            collInner = !collInner; 
+            applyCollapse('gcc-similare-body', 'gcc-similare-arrow', collInner); 
+            chrome.storage.local.set({ collManualCollapsed: collInner });
+        };
+
+        // Click triggers for Viral Cluster (Saves state)
+        document.getElementById('gcc-viral-header').onclick = () => { 
+            viralInner = !viralInner; 
+            applyCollapse('gcc-viral-body', 'gcc-viral-arrow', viralInner); 
+            chrome.storage.local.set({ viralManualCollapsed: viralInner });
+        };
+
+        // Click triggers for Features panel (Saves state)
+        document.getElementById('gcc-features-header').onclick = () => { 
+            featuresCollapsed = !featuresCollapsed; 
+            applyCollapse('gcc-features-body', 'gcc-features-arrow', featuresCollapsed); 
+            chrome.storage.local.set({ featuresCollapsed });
+        };
+
+        // Click triggers for Federation Names panel (Saves state)
+        document.getElementById('gcc-fed-header').onclick = () => { 
+            fedCollapsed = !fedCollapsed; 
+            applyCollapse('gcc-fed-body', 'gcc-fed-arrow', fedCollapsed); 
+            chrome.storage.local.set({ fedCollapsed });
+        };
     });
-
-    document.getElementById('gcc-similare-header').addEventListener('click', () => {
-        collInnerCollapsed = !collInnerCollapsed;
-        applyCollapse('gcc-similare-body', 'gcc-similare-arrow', collInnerCollapsed);
-    });
-
-    document.getElementById('gcc-viral-header').addEventListener('click', () => {
-        viralInnerCollapsed = !viralInnerCollapsed;
-        applyCollapse('gcc-viral-body', 'gcc-viral-arrow', viralInnerCollapsed);
-    });
-
     // 12. Federation name toggles
     const fedLazyToggle = document.getElementById('gcc-fed-lazy');
     const fedFullToggle = document.getElementById('gcc-fed-full');
