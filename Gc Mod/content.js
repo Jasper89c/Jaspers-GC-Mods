@@ -1443,3 +1443,266 @@ async function checkForUpdates() {
         console.log("GC Mods Update Check Failed: ", e);
     }
 }
+
+// Global memory hook tracking the session string identity
+function getGcSessionId() {
+    const match = window.location.href.match(/i\.cfm\?&?([\w\d\-=\+]+)&/);
+    return match ? match[1] : '';
+}
+
+let currentChatTab = 'public';
+let isSubmitting = false;
+
+function getGcSessionId() {
+    let href = window.location.href;
+    if (window.top && window.top.location) {
+        href = window.top.location.href;
+    }
+    const match = href.match(/i\.cfm\?&?([\w\d\-=\+]+)&/);
+    return match ? match[1] : '';
+}
+
+// Updated Public feed syncing engine to display newest messages at the bottom
+async function updatePublicFeed(container) {
+    if (!container || isSubmitting) return;
+    let targetDoc = document;
+    
+    const nativeFeed = document.querySelector('.gc-sidechat__feed');
+    if (!nativeFeed) {
+        try {
+            const sid = getGcSessionId();
+            const url = sid ? `i.cfm?&${sid}&f=com` : `i.cfm?f=com`;
+            const res = await fetch(url, { credentials: 'same-origin' });
+            if (res.ok) {
+                const html = await res.text();
+                targetDoc = new DOMParser().parseFromString(html, 'text/html');
+            }
+        } catch (e) {
+            return;
+        }
+    }
+
+    const lines = targetDoc.querySelectorAll('.gc-sidechat__entry');
+    if (lines.length > 0) {
+        container.innerHTML = '';
+        
+        // Array.from().reverse() forces the oldest messages up top 
+        // and pushes the shiny new ones right to the bottom!
+        Array.from(lines).reverse().forEach(line => {
+            const nameEl = line.querySelector('.gc-sidechat__name');
+            const textEl = line.querySelector('.gc-sidechat__text');
+            if (nameEl && textEl) {
+                const row = document.createElement('div');
+                row.className = 'custom-chat-line';
+                row.innerHTML = `<span class="custom-chat-username">${nameEl.textContent}</span><span class="custom-chat-body-text">${textEl.textContent}</span>`;
+                container.appendChild(row);
+            }
+        });
+        
+        // Instantly snap the scroll container downwards so the latest updates are in view
+        container.scrollTop = container.scrollHeight;
+    }
+}
+// Fed forum syncing engine
+async function refreshFedFeedFromServer(container) {
+    if (!container || isSubmitting) return;
+    try {
+        const sid = getGcSessionId();
+        const url = sid ? `i.cfm?&${sid}&f=fed_forum` : `i.cfm?f=fed_forum`;
+        const res = await fetch(url, { credentials: 'same-origin' });
+        if (!res.ok) return;
+
+        const html = await res.text();
+        const doc = new DOMParser().parseFromString(html, 'text/html');
+        const rows = doc.querySelectorAll('table.Default tr[valign="top"]');
+        container.innerHTML = '';
+
+        if (rows.length === 0) {
+            container.innerHTML = '<div style="color:gray;text-align:center;margin-top:20px;">No federation messages found.</div>';
+            return;
+        }
+
+        Array.from(rows).reverse().forEach(row => {
+            const cells = row.querySelectorAll('td');
+            if (cells.length >= 2) {
+                const username = cells[0].childNodes[0].textContent.trim();
+                const fontEl = cells[0].querySelector('font');
+                const timestamp = fontEl ? fontEl.innerHTML.replace('<br>', ' ') : '';
+
+                let bodyHtml = cells[1].innerHTML.trim();
+                bodyHtml = bodyHtml.replace(/(?:<br\s*\/?>\s*)+Colony Name/gi, '<span class="custom-fed-break-block">Colony Name');
+                if (bodyHtml.includes('custom-fed-break-block')) bodyHtml += '</span>';
+
+                const chatLine = document.createElement('div');
+                chatLine.className = 'custom-chat-line';
+                chatLine.innerHTML = `
+                    <div>
+                        <span class="custom-chat-username">${username}</span>
+                        <span class="custom-chat-timestamp">${timestamp}</span>
+                    </div>
+                    <div class="custom-chat-body-text" style="margin-top:2px;">${bodyHtml}</div>
+                `;
+                container.appendChild(chatLine);
+            }
+        });
+
+        container.scrollTop = container.scrollHeight;
+    } catch(e) {
+        console.error(e);
+    }
+}
+
+// Render interface safely
+function renderEmbeddedBottomChat() {
+    if (document.querySelector('.custom-bottom-chat-panel')) return;
+    if (!document.body) return;
+
+    // Soft hide legacy element if present
+    const oldBar = document.getElementById('SBar');
+    if (oldBar) oldBar.style.display = 'none';
+
+    const chatPanel = document.createElement('div');
+    chatPanel.className = 'custom-bottom-chat-panel';
+
+    const tabHeader = document.createElement('div');
+    tabHeader.className = 'custom-chat-tabs-header';
+
+    const publicTabBtn = document.createElement('button');
+    publicTabBtn.className = `custom-chat-tab-button ${currentChatTab === 'public' ? 'active' : ''}`;
+    publicTabBtn.textContent = 'Public Chat';
+
+    const fedTabBtn = document.createElement('button');
+    fedTabBtn.className = `custom-chat-tab-button ${currentChatTab === 'fed' ? 'active' : ''}`;
+    fedTabBtn.textContent = 'Federation Discussion';
+
+    tabHeader.appendChild(publicTabBtn);
+    tabHeader.appendChild(fedTabBtn);
+
+    const publicFeedDisplay = document.createElement('div');
+    publicFeedDisplay.className = `custom-chat-feed-container ${currentChatTab === 'public' ? 'active' : ''}`;
+
+    const fedFeedDisplay = document.createElement('div');
+    fedFeedDisplay.className = `custom-chat-feed-container ${currentChatTab === 'fed' ? 'active' : ''}`;
+
+    const inputBar = document.createElement('div');
+    inputBar.className = 'custom-chat-input-bar';
+
+    const textInput = document.createElement('input');
+    textInput.type = 'text';
+    textInput.className = 'custom-chat-text-field';
+    textInput.placeholder = currentChatTab === 'public' ? 'Type public message...' : 'Type federation message...';
+    textInput.maxLength = currentChatTab === 'public' ? 150 : 5000;
+
+    const sendBtn = document.createElement('button');
+    sendBtn.className = 'custom-chat-send-btn';
+    sendBtn.textContent = 'Send';
+
+    inputBar.appendChild(textInput);
+    inputBar.appendChild(sendBtn);
+    chatPanel.appendChild(tabHeader);
+    chatPanel.appendChild(publicFeedDisplay);
+    chatPanel.appendChild(fedFeedDisplay);
+    chatPanel.appendChild(inputBar);
+    
+    document.body.appendChild(chatPanel);
+
+    async function handlePostSubmission() {
+        const messageText = textInput.value.trim();
+        if (!messageText || isSubmitting) return;
+
+        isSubmitting = true;
+        textInput.disabled = true;
+        sendBtn.disabled = true;
+        const sid = getGcSessionId();
+
+        try {
+            if (currentChatTab === 'public') {
+                const url = sid ? `i.cfm?&${sid}&popup=msgsector` : `i.cfm?popup=msgsector`;
+                const res = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `chat=${encodeURIComponent(messageText)}&remLen2=${150 - messageText.length}`,
+                    credentials: 'same-origin'
+                });
+                if (res.ok) {
+                    textInput.value = '';
+                    await updatePublicFeed(publicFeedDisplay);
+                }
+            } else {
+                const url = sid ? `i.cfm?&${sid}&f=fed_forum` : `i.cfm?f=fed_forum`;
+                const res = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `forum2=${encodeURIComponent(messageText)}&remLen2=${5000 - messageText.length}&submitflag=Post+Message`,
+                    credentials: 'same-origin'
+                });
+                if (res.ok) {
+                    textInput.value = '';
+                    await refreshFedFeedFromServer(fedFeedDisplay);
+                }
+            }
+        } catch (e) {
+            console.error(e);
+        } finally {
+            isSubmitting = false;
+            textInput.disabled = false;
+            sendBtn.disabled = false;
+            textInput.focus();
+        }
+    }
+
+    publicTabBtn.addEventListener('click', () => {
+        currentChatTab = 'public';
+        fedTabBtn.classList.remove('active');
+        publicTabBtn.classList.add('active');
+        fedFeedDisplay.classList.remove('active');
+        publicFeedDisplay.classList.add('active');
+        textInput.placeholder = 'Type public message...';
+        textInput.maxLength = 150;
+        updatePublicFeed(publicFeedDisplay);
+    });
+
+    fedTabBtn.addEventListener('click', async () => {
+        currentChatTab = 'fed';
+        publicTabBtn.classList.remove('active');
+        fedTabBtn.classList.add('active');
+        publicFeedDisplay.classList.remove('active');
+        fedFeedDisplay.classList.add('active');
+        textInput.placeholder = 'Type federation message...';
+        textInput.maxLength = 5000;
+        fedFeedDisplay.innerHTML = '<div style="color:gray;text-align:center;margin-top:20px;">Loading Fed...</div>';
+        await refreshFedFeedFromServer(fedFeedDisplay);
+    });
+
+    sendBtn.addEventListener('click', handlePostSubmission);
+    textInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') handlePostSubmission();
+    });
+
+    if (currentChatTab === 'public') updatePublicFeed(publicFeedDisplay);
+    else refreshFedFeedFromServer(fedFeedDisplay);
+}
+
+// 1. Safe, light, non-breaking continuous content loop loader
+setInterval(() => {
+    // If a page transition completely wiped out our chat panel box, reconstruct it cleanly
+    if (!document.querySelector('.custom-bottom-chat-panel')) {
+        renderEmbeddedBottomChat();
+    }
+    
+    // Refresh feed data silently inside the containers
+    if (currentChatTab === 'public') {
+        const publicBox = document.querySelector('.custom-bottom-chat-panel .custom-chat-feed-container.active');
+        if (publicBox) updatePublicFeed(publicBox);
+    } else {
+        const fedBox = document.querySelector('.custom-bottom-chat-panel .custom-chat-feed-container.active');
+        if (fedBox) refreshFedFeedFromServer(fedBox);
+    }
+}, 7000); // Ticks smoothly every 7 seconds without stressing the CPU or server
+
+// Run instantly on first execution injection
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', renderEmbeddedBottomChat);
+} else {
+    renderEmbeddedBottomChat();
+}

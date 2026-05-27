@@ -35,3 +35,141 @@
 .preset-btn:hover {
     background: #444;
 }
+
+/* Primary Dual-Tab Control Box Layout Frame */
+.custom-bottom-chat-panel {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 625px;
+    height: 300px;
+    background-color: #1f2842;
+    border: 3px solid #334b75;
+    border-radius: 6px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+    display: flex;
+    flex-direction: column;
+    font-family: Arial, sans-serif;
+    z-index: 9999;
+}
+
+/* Nav Tab Header Bar Styles */
+.custom-chat-tabs-header {
+    display: flex;
+    background-color: #1f2842;
+    border-bottom: 2px solid #334b75;
+}
+
+.custom-chat-tab-button {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: #b7bdd1;
+    padding: 4px 0;
+    font-size: 11px;
+    font-weight: bold;
+    text-transform: uppercase;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.2s;
+}
+
+.custom-chat-tab-button:hover {
+    color: #f1eee8;
+    background-color: rgba(232, 181, 99, 0.05);
+}
+
+.custom-chat-tab-button.active {
+    color: #b7bdd1;
+    background-color: #334b75;
+}
+
+/* Scrollable messages container area panels */
+.custom-chat-feed-container {
+    flex: 1;
+    padding: 10px;
+    overflow-y: auto;
+    background-color: #0c1018;
+    color: #f1eee8;
+    font-size: 12px;
+    display: none; /* Controlled via JS toggles */
+    flex-direction: column;
+    gap: 6px;
+}
+
+.custom-chat-feed-container.active {
+    display: flex;
+}
+
+/* Unified formatting for user entry line variants */
+.custom-chat-line {
+    line-height: 1.4;
+    word-break: break-word;
+    border-bottom: 1px solid rgba(78, 116, 176, 0.15);
+    padding-bottom: 4px;
+}
+
+.custom-chat-username {
+    color: #e8b563;
+    font-weight: bold;
+    margin-right: 6px;
+}
+
+.custom-chat-timestamp {
+    color: #687088;
+    font-size: 9px;
+    margin-left: 6px;
+}
+
+.custom-chat-body-text {
+    color: #b7bdd1;
+}
+
+/* Multi-line display format for Fed forum content data segments */
+.custom-fed-break-block {
+    display: block;
+    margin-top: 2px;
+    color: #a3a9be;
+    padding-left: 4px;
+    border-left: 2px solid #334b75;
+}
+
+/* Interactive footer text layout bar */
+.custom-chat-input-bar {
+    display: flex;
+    border-top: 2px solid #334b75;
+    background-color: #1f2842;
+    padding: 4px;
+}
+
+.custom-chat-text-field {
+    flex: 1;
+    background: #0c1018;
+    border: 1px solid #4e74b0;
+    color: #f1eee8;
+    padding: 6px 10px;
+    font-size: 12px;
+    border-radius: 4px;
+    outline: none;
+}
+
+.custom-chat-send-btn {
+    background: #e8b563;
+    color: #151c31;
+    border: none;
+    padding: 0 14px;
+    margin-left: 4px;
+    font-size: 11px;
+    font-weight: bold;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.custom-chat-send-btn:hover {
+    background: #ffd38d;
+}
+
+/* Hide legacy sidebar elements cleanly */
+#SBar {
+    display: none !important;
+}
