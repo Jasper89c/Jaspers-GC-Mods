@@ -2,7 +2,8 @@
 document.addEventListener('DOMContentLoaded', () => {
     chrome.storage.local.get([
         'assimEnabled', 'infectEnabled', 'fedLazy', 'fedFull',
-        'clusterCollapsed', 'similareCollapsed', 'viralCollapsed', 'autoContinue', 'autoExplore', 'simsLinksEnabled', 'chatFeaturesEnabled'
+        'clusterCollapsed', 'similareCollapsed', 'viralCollapsed', 'autoContinue',
+         'autoExplore', 'simsLinksEnabled', 'chatFeaturesEnabled', 'batchButtonsEnabled'
     ], (res) => {
 
         // 1. Assimilate Status Card Badge
@@ -158,6 +159,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
             chatToggleCheck.addEventListener('change', () => {
                 chrome.storage.local.set({ chatFeatureEnabled: chatToggleCheck.checked });
+            });
+        }
+
+        const batchToggleCheck = document.getElementById('dash-batch-toggle');
+        if (batchToggleCheck) {
+            // Default to true (ON) if it hasn't been set yet
+            batchToggleCheck.checked = (res.batchButtonsEnabled !== false);
+
+            batchToggleCheck.addEventListener('change', () => {
+                chrome.storage.local.set({ batchButtonsEnabled: batchToggleCheck.checked });
             });
         }
     });

@@ -6,7 +6,8 @@ let sid = null;
 let autoContinueEnabled = true;
 let autoExploreEnabled = true;
 let simsLinksEnabled = true;
-let chatFeatureEnabledState = true;
+let chatFeatureEnabled = true;
+let batchButtonsEnabledState = true;
 
 // 1. Fetch current settings from memory immediately when the page loads
 chrome.storage.local.get(['autoContinue', 'autoExplore'], (res) => {
@@ -30,6 +31,21 @@ chrome.storage.onChanged.addListener((changes, namespace) => {
                 // Optional: If you want them gone instantly when turned off, reload
                 window.location.reload(); 
             }
+        }
+    }
+
+    if (changes.batchButtonsEnabled) {
+        if (changes.batchButtonsEnabled.newValue !== false) {
+            // If turned on, run the injector
+            try { addShipBuilderBatchButtons(); } catch (e) { }
+        } else {
+            // If turned off, remove the buttons immediately
+            const buttons = document.querySelectorAll('.gcc-builder-batch-button');
+            buttons.forEach(btn => btn.remove());
+
+            // Reset the data flags so they can be re-added later if needed
+            const processedControls = document.querySelectorAll('[data-gcc-batch-buttons-added]');
+            processedControls.forEach(el => delete el.dataset.gccBatchButtonsAdded);
         }
     }
 });
@@ -57,7 +73,7 @@ setInterval(function() {
 // === 2. MAIN EXTENSION PANEL LOGIC ===
 chrome.storage.local.get(['panelPos', 'presets', 'storedSid', 'assimEnabled', 'infectEnabled',
      'clusterCollapsed', 'similareCollapsed', 'viralCollapsed', 'fedLazy', 'fedFull',
-      'clusterMineral', 'simsLinksEnabled', 'chatFeatureEnabled'], (res) => {
+      'clusterMineral', 'simsLinksEnabled', 'chatFeatureEnabled', 'batchButtonsEnabled'], (res) => {
     const pos = res.panelPos || { top: '20px', left: 'auto', right: '20px' };
     const savedPresets = res.presets || {};
 
@@ -69,7 +85,8 @@ chrome.storage.local.get(['panelPos', 'presets', 'storedSid', 'assimEnabled', 'i
     const simsLinksEnabledState = (res.simsLinksEnabled !== false);
     // CRITICAL: Assign the value to our global variable here!
     chatFeatureEnabledState = (res.chatFeatureEnabled !== false);
-    
+    batchButtonsEnabledState = (res.batchButtonsEnabled !== false);
+
     const container = document.createElement('div');
     container.id = 'gcc-preset-panel';
     container.style.cssText = `position:fixed; top:${pos.top}; left:${pos.left}; right:${pos.right}; width:190px; background:#2a365a; border:2px solid #444; z-index:99999; border-radius:8px; overflow:hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.5); font-family: Arial, sans-serif; color: white;`;
@@ -442,7 +459,7 @@ function removeFedNames() {
 }
 
 function setupLogic(container, presets, sid, assimEnabled, infectEnabled, clusterCollapsed, 
-    similareCollapsed, viralCollapsed, fedLazy, fedFull, simsLinksEnabledState, chatFeatureEnabled) {
+    similareCollapsed, viralCollapsed, fedLazy, fedFull, simsLinksEnabledState, chatFeatureEnabled, batchButtonsEnabled) {
     document.getElementById('gcc-refresh-btn').onclick = () => window.location.reload();
 
     // Trigger the update check automatically
@@ -546,13 +563,28 @@ function setupLogic(container, presets, sid, assimEnabled, infectEnabled, cluste
     if (typeof attachShipHoverTooltips === 'function') attachShipHoverTooltips();
 
     // 6. Add ship builder batch buttons on the ship page only
-    try {
-        if (window.location.href.includes('f=com_ship')) {
-            addShipBuilderBatchButtons();
-            setTimeout(addShipBuilderBatchButtons, 500);
-            setTimeout(addShipBuilderBatchButtons, 1000);
+    // We check storage directly to ensure we have the absolute latest state
+    chrome.storage.local.get('batchButtonsEnabled', (res) => {
+        const isEnabled = (res.batchButtonsEnabled !== false);
+
+        if (isEnabled) {
+            try {
+                // 1. Try to run immediately on load
+                if (window.location.href.includes('f=com_ship')) {
+                    addShipBuilderBatchButtons();
+                }
+
+                // 2. Set up a recurring check every 1.5 seconds
+                // This handles navigation (away and back) and slow page loads
+                setInterval(() => {
+                    if (window.location.href.includes('f=com_ship')) {
+                        addShipBuilderBatchButtons();
+                    }
+                }, 1500);
+
+            } catch (e) { console.error("Batch Buttons Error:", e); }
         }
-    } catch (e) {}
+    });
 
     // 7. Add disband quick-action cells on the disband page only
     try {
@@ -570,6 +602,8 @@ function setupLogic(container, presets, sid, assimEnabled, infectEnabled, cluste
             setTimeout(addSimulationsLinks, 500);
         } catch (e) { }
     }
+
+    
 
     // --- 9. Background Injections (Driven entirely via Dashboard settings now) ---
     if (assimEnabled) {
