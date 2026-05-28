@@ -4,21 +4,25 @@
   "version": "1.6",
   "permissions": [
     "storage",
-    "https://api.github.com/*"
+    "webRequest"
+  ],
+  "host_permissions": [
+    "https://api.github.com/*",
+    "*://gcc.wrindustries.com/*"
   ],
   "options_ui": {
     "page": "dashboard.html",
     "open_in_tab": true
   },
   "content_scripts": [
-  {
-    "matches": ["*://gcc.wrindustries.com/*"],
-    "js": ["content.js"],
-    "css": ["styles.css"],
-    "run_at": "document_end",
-    "all_frames": true
-  }
-],
+    {
+      "matches": ["*://gcc.wrindustries.com/*"],
+      "js": ["content.js"],
+      "css": ["styles.css"],
+      "run_at": "document_end",
+      "all_frames": true
+    }
+  ],
   "web_accessible_resources": [
     {
       "resources": [

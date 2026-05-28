@@ -2,7 +2,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     chrome.storage.local.get([
         'assimEnabled', 'infectEnabled', 'fedLazy', 'fedFull',
-        'clusterCollapsed', 'similareCollapsed', 'viralCollapsed', 'autoContinue', 'autoExplore'
+        'clusterCollapsed', 'similareCollapsed', 'viralCollapsed', 'autoContinue', 'autoExplore', 'simsLinksEnabled', 'chatFeaturesEnabled'
     ], (res) => {
 
         // 1. Assimilate Status Card Badge
@@ -137,6 +137,27 @@ document.addEventListener('DOMContentLoaded', () => {
                     fedFull: fedFullCheck.checked,
                     fedLazy: fedLazyCheck ? fedLazyCheck.checked : false
                 });
+            });
+        }
+        // --- SIMULATIONS LINKS AUTOMATION HANDLE ---
+        const simsLinksCheck = document.getElementById('dash-sims-toggle');
+        if (simsLinksCheck) {
+            // Check the box if simsLinksEnabled is true (Defaulting to true if undefined)
+            simsLinksCheck.checked = (res.simsLinksEnabled !== false);
+
+            simsLinksCheck.addEventListener('change', () => {
+                chrome.storage.local.set({ simsLinksEnabled: simsLinksCheck.checked });
+            });
+        }
+
+        // --- CHAT FEATURE AUTOMATION HANDLE ---
+        const chatToggleCheck = document.getElementById('dash-chat-toggle');
+        if (chatToggleCheck) {
+            // Defaults to true (ON) if it hasn't been set yet
+            chatToggleCheck.checked = (res.chatFeatureEnabled !== false);
+
+            chatToggleCheck.addEventListener('change', () => {
+                chrome.storage.local.set({ chatFeatureEnabled: chatToggleCheck.checked });
             });
         }
     });

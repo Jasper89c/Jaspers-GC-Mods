@@ -5,6 +5,8 @@ let sid = null;
 // Global flags to hold our automation states
 let autoContinueEnabled = true;
 let autoExploreEnabled = true;
+let simsLinksEnabled = true;
+let chatFeatureEnabledState = true;
 
 // 1. Fetch current settings from memory immediately when the page loads
 chrome.storage.local.get(['autoContinue', 'autoExplore'], (res) => {
@@ -17,6 +19,18 @@ chrome.storage.onChanged.addListener((changes, namespace) => {
     if (namespace === 'local') {
         if (changes.autoContinue) autoContinueEnabled = changes.autoContinue.newValue;
         if (changes.autoExplore) autoExploreEnabled = changes.autoExplore.newValue;
+
+        // Add this check below them:
+        if (changes.simsLinksEnabled) {
+            simsLinksEnabledState = changes.simsLinksEnabled.newValue;
+            // If the user turned it ON live, run the injector immediately
+            if (simsLinksEnabledState !== false) {
+                try { addSimulationsLinks(); } catch(e){}
+            } else {
+                // Optional: If you want them gone instantly when turned off, reload
+                window.location.reload(); 
+            }
+        }
     }
 });
 
@@ -38,17 +52,24 @@ setInterval(function() {
             btn.click();
         }
     }
-}, 250);
+}, 100);
 
 // === 2. MAIN EXTENSION PANEL LOGIC ===
-chrome.storage.local.get(['panelPos', 'presets', 'storedSid', 'assimEnabled', 'infectEnabled', 'clusterCollapsed', 'similareCollapsed', 'viralCollapsed', 'fedLazy', 'fedFull', 'clusterMineral'], (res) => {
+chrome.storage.local.get(['panelPos', 'presets', 'storedSid', 'assimEnabled', 'infectEnabled',
+     'clusterCollapsed', 'similareCollapsed', 'viralCollapsed', 'fedLazy', 'fedFull',
+      'clusterMineral', 'simsLinksEnabled', 'chatFeatureEnabled'], (res) => {
     const pos = res.panelPos || { top: '20px', left: 'auto', right: '20px' };
     const savedPresets = res.presets || {};
 
     const sidMatch = document.documentElement.innerHTML.match(/&(\d+)&/) || window.location.href.match(/&(\d+)&/);
     sid = sidMatch ? sidMatch[1] : res.storedSid;
     if (sid) chrome.storage.local.set({ storedSid: sid });
-
+    
+    // Safely capture dashboard setting (defaulting to true if it doesn't exist yet)
+    const simsLinksEnabledState = (res.simsLinksEnabled !== false);
+    // CRITICAL: Assign the value to our global variable here!
+    chatFeatureEnabledState = (res.chatFeatureEnabled !== false);
+    
     const container = document.createElement('div');
     container.id = 'gcc-preset-panel';
     container.style.cssText = `position:fixed; top:${pos.top}; left:${pos.left}; right:${pos.right}; width:190px; background:#2a365a; border:2px solid #444; z-index:99999; border-radius:8px; overflow:hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.5); font-family: Arial, sans-serif; color: white;`;
@@ -139,7 +160,11 @@ chrome.storage.local.get(['panelPos', 'presets', 'storedSid', 'assimEnabled', 'i
         </style>
     `;
     document.body.appendChild(container);
-    setupLogic(container, savedPresets, sid, !!res.assimEnabled, !!res.infectEnabled, !!res.clusterCollapsed, !!res.similareCollapsed, !!res.viralCollapsed, !!res.fedLazy, !!res.fedFull);
+    
+    // Fired setupLogic passing simsLinksEnabledState as the 11th argument
+    setupLogic(container, savedPresets, sid, !!res.assimEnabled, !!res.infectEnabled, !!res.clusterCollapsed, !!res.similareCollapsed, !!res.viralCollapsed, !!res.fedLazy, !!res.fedFull, simsLinksEnabledState);
+
+    renderEmbeddedBottomChat();
 });
 
 // Replace your old performGlobalCluster function with this one:
@@ -416,7 +441,8 @@ function removeFedNames() {
     document.querySelectorAll('[data-gcc-fed-full-done]').forEach(el => delete el.dataset.gccFedFullDone);
 }
 
-function setupLogic(container, presets, sid, assimEnabled, infectEnabled, clusterCollapsed, similareCollapsed, viralCollapsed, fedLazy, fedFull) {
+function setupLogic(container, presets, sid, assimEnabled, infectEnabled, clusterCollapsed, 
+    similareCollapsed, viralCollapsed, fedLazy, fedFull, simsLinksEnabledState, chatFeatureEnabled) {
     document.getElementById('gcc-refresh-btn').onclick = () => window.location.reload();
 
     // Trigger the update check automatically
@@ -538,10 +564,12 @@ function setupLogic(container, presets, sid, assimEnabled, infectEnabled, cluste
     } catch (e) {}
 
     // 8. Add Simulations links to the bottom of the left nav bar
-    try {
-        addSimulationsLinks();
-        setTimeout(addSimulationsLinks, 500);
-    } catch (e) {}
+    if (simsLinksEnabledState !== false) {
+        try {
+            addSimulationsLinks();
+            setTimeout(addSimulationsLinks, 500);
+        } catch (e) { }
+    }
 
     // --- 9. Background Injections (Driven entirely via Dashboard settings now) ---
     if (assimEnabled) {
@@ -1316,122 +1344,223 @@ async function checkForUpdates() {
     }
 }
 
-// Global memory hook tracking the session string identity
-function getGcSessionId() {
-    const match = window.location.href.match(/i\.cfm\?&?([\w\d\-=\+]+)&/);
-    return match ? match[1] : '';
-}
-
-let currentChatTab = 'public';
-let isSubmitting = false;
-
 function getGcSessionId() {
     let href = window.location.href;
     if (window.top && window.top.location) {
         href = window.top.location.href;
     }
-    const match = href.match(/i\.cfm\?&?([\w\d\-=\+]+)&/);
+    const match = href.match(/i\.cfm\?&?([^&]+)&/);
     return match ? match[1] : '';
 }
 
-// Updated Public feed syncing engine to display newest messages at the bottom
-async function updatePublicFeed(container) {
-    if (!container || isSubmitting) return;
-    let targetDoc = document;
+// --- SYNCHRONOUS MESSAGING ENGINE ---
+
+let currentChatTab = localStorage.getItem('gc_custom_chat_tab') || 'public';
+let isSubmitting = false;
+
+if (typeof chatFeatureEnabledState === 'undefined') {
+    window.chatFeatureEnabledState = true;
+} else {
+    chatFeatureEnabledState = true;
+}
+
+// 1. Request the token using Chrome's runtime messaging channel
+function fetchActiveSessionId(callback) {
+    try {
+        if (chrome && chrome.runtime && chrome.runtime.id) {
+            chrome.runtime.sendMessage({ action: "GET_SID" }, function(response) {
+                if (chrome.runtime.lastError || !response) {
+                    callback(localStorage.getItem('gc_last_known_sid') || '');
+                    return;
+                }
+                if (response.sid) {
+                    localStorage.setItem('gc_last_known_sid', response.sid);
+                    callback(response.sid);
+                } else {
+                    callback(localStorage.getItem('gc_last_known_sid') || '');
+                }
+            });
+        } else {
+            callback(localStorage.getItem('gc_last_known_sid') || '');
+        }
+    } catch (e) {
+        callback(localStorage.getItem('gc_last_known_sid') || '');
+    }
+}
+
+function updatePublicFeed(container) {
+    // Check if chat is enabled or container exists
+    if (!container || chatFeatureEnabledState === false) return;
     
-    const nativeFeed = document.querySelector('.gc-sidechat__feed');
-    if (!nativeFeed) {
+    // Fetch the Session ID first to ensure we are logged in
+    fetchActiveSessionId(async function(sid) {
         try {
-            const sid = getGcSessionId();
+            // Construct the URL for the public chat
             const url = sid ? `i.cfm?&${sid}&f=com` : `i.cfm?f=com`;
+
+            // Fetch the latest chat HTML from the server
             const res = await fetch(url, { credentials: 'same-origin' });
+            
             if (res.ok) {
                 const html = await res.text();
-                targetDoc = new DOMParser().parseFromString(html, 'text/html');
-            }
-        } catch (e) {
-            return;
-        }
-    }
+                
+                // If the chat is empty or the response is invalid, stop here
+                if (html.includes('Nothing to see here') || !html.includes('gc-sidechat__entry')) return;
+                
+                // Parse the HTML response into a virtual document
+                const targetDoc = new DOMParser().parseFromString(html, 'text/html');
+                const lines = targetDoc.querySelectorAll('.gc-sidechat__entry');
+                
+                if (lines.length > 0) {
+                    container.innerHTML = ''; // Clear the current chat view
+                    
+                    // Loop through messages (Server sends newest first, so we reverse to put newest at bottom)
+                    Array.from(lines).reverse().forEach(line => {
+                        const nameEl = line.querySelector('.gc-sidechat__name');
+                        const textEl = line.querySelector('.gc-sidechat__text');
+                        
+                        if (nameEl && textEl) {
+                            const row = document.createElement('div');
+                            row.className = 'custom-chat-line';
+                            
+                            // --- Create elements safely (avoids syntax errors with special characters) ---
+                            const nameSpan = document.createElement('span');
+                            nameSpan.className = 'custom-chat-username';
+                            nameSpan.textContent = nameEl.textContent;
+                            
+                            const textSpan = document.createElement('span');
+                            textSpan.className = 'custom-chat-body-text';
+                            textSpan.textContent = textEl.textContent;
+                            
+                            row.appendChild(nameSpan);
+                            row.appendChild(textSpan);
+                            // ----------------------------------------------------------------------------------
+                            
+                            container.appendChild(row);
+                        }
+                    });
 
-    const lines = targetDoc.querySelectorAll('.gc-sidechat__entry');
-    if (lines.length > 0) {
-        container.innerHTML = '';
-        
-        // Array.from().reverse() forces the oldest messages up top 
-        // and pushes the shiny new ones right to the bottom!
-        Array.from(lines).reverse().forEach(line => {
-            const nameEl = line.querySelector('.gc-sidechat__name');
-            const textEl = line.querySelector('.gc-sidechat__text');
-            if (nameEl && textEl) {
-                const row = document.createElement('div');
-                row.className = 'custom-chat-line';
-                row.innerHTML = `<span class="custom-chat-username">${nameEl.textContent}</span><span class="custom-chat-body-text">${textEl.textContent}</span>`;
-                container.appendChild(row);
+                    // Auto-scroll to the bottom
+                    container.scrollTop = container.scrollHeight;
+                }
             }
-        });
-        
-        // Instantly snap the scroll container downwards so the latest updates are in view
-        container.scrollTop = container.scrollHeight;
-    }
+        } catch (e) { 
+            console.error(e); 
+        }
+    });
 }
-// Fed forum syncing engine
+
 async function refreshFedFeedFromServer(container) {
-    if (!container || isSubmitting) return;
-    try {
-        const sid = getGcSessionId();
-        const url = sid ? `i.cfm?&${sid}&f=fed_forum` : `i.cfm?f=fed_forum`;
-        const res = await fetch(url, { credentials: 'same-origin' });
-        if (!res.ok) return;
+    // Removed isSubmitting check here. This allows the chat to refresh 
+    // immediately after you send a message, rather than waiting 7 seconds.
+    if (!container || chatFeatureEnabledState === false) return;
+    
+    // Use fetchActiveSessionId to ensure we grab the SID from storage if it's missing from the URL
+    fetchActiveSessionId(async function(sid) {
+        try {
+            const url = sid ? `i.cfm?&${sid}&f=fed_forum` : `i.cfm?f=fed_forum`;
+            const res = await fetch(url, { credentials: 'same-origin' });
+            if (!res.ok) return;
 
-        const html = await res.text();
-        const doc = new DOMParser().parseFromString(html, 'text/html');
-        const rows = doc.querySelectorAll('table.Default tr[valign="top"]');
-        container.innerHTML = '';
+            const html = await res.text();
+            const doc = new DOMParser().parseFromString(html, 'text/html');
+            
+            // Heuristic to find the correct forum table rows. 
+            // We look for rows in a Default table where the first cell has width="1%".
+            // This distinguishes the actual forum posts from other layout tables on the page.
+            const allRows = doc.querySelectorAll('table.Default tr');
+            const rows = Array.from(allRows).filter(row => {
+                const firstTd = row.querySelector('td');
+                // Check for the specific layout of the fed forum (narrow user column, at least 2 cells)
+                return firstTd && firstTd.getAttribute('width') === '1%' && row.querySelectorAll('td').length >= 2;
+            });
 
-        if (rows.length === 0) {
-            container.innerHTML = '<div style="color:gray;text-align:center;margin-top:20px;">No federation messages found.</div>';
-            return;
-        }
+            container.innerHTML = '';
 
-        Array.from(rows).reverse().forEach(row => {
-            const cells = row.querySelectorAll('td');
-            if (cells.length >= 2) {
-                const username = cells[0].childNodes[0].textContent.trim();
-                const fontEl = cells[0].querySelector('font');
-                const timestamp = fontEl ? fontEl.innerHTML.replace('<br>', ' ') : '';
-
-                let bodyHtml = cells[1].innerHTML.trim();
-                bodyHtml = bodyHtml.replace(/(?:<br\s*\/?>\s*)+Colony Name/gi, '<span class="custom-fed-break-block">Colony Name');
-                if (bodyHtml.includes('custom-fed-break-block')) bodyHtml += '</span>';
-
-                const chatLine = document.createElement('div');
-                chatLine.className = 'custom-chat-line';
-                chatLine.innerHTML = `
-                    <div>
-                        <span class="custom-chat-username">${username}</span>
-                        <span class="custom-chat-timestamp">${timestamp}</span>
-                    </div>
-                    <div class="custom-chat-body-text" style="margin-top:2px;">${bodyHtml}</div>
-                `;
-                container.appendChild(chatLine);
+            if (rows.length === 0) {
+                container.innerHTML = '<div style="color:gray;text-align:center;margin-top:20px;">No federation messages found.</div>';
+                return;
             }
-        });
 
-        container.scrollTop = container.scrollHeight;
-    } catch(e) {
-        console.error(e);
-    }
+            // The server returns messages newest-first (at the top). 
+            // Chat apps usually display newest at the bottom, so we reverse the array.
+            Array.from(rows).reverse().forEach(row => {
+                const cells = row.querySelectorAll('td');
+                if (cells.length >= 2) {
+                    const userCell = cells[0];
+                    const bodyCell = cells[1];
+
+                    // 1. Parse Username
+                    // The HTML is "Name <a...>...</a><br>..."
+                    // We grab everything strictly before the first opening tag <.
+                    let username = "Unknown";
+                    const nameMatch = userCell.innerHTML.match(/^([^<]+)</);
+                    if (nameMatch) {
+                        username = nameMatch[1].trim();
+                    }
+
+                    // 2. Parse Timestamp
+                    // The timestamp is inside the <font color="gray"> tag
+                    let timestamp = "";
+                    const fontEl = userCell.querySelector('font[color="gray"]');
+                    if (fontEl) {
+                        // Replace newlines with spaces for cleaner display
+                        timestamp = fontEl.textContent.replace(/\n+/g, ' ').trim();
+                    }
+
+                    // 3. Parse Body
+                    let bodyHtml = bodyCell.innerHTML.trim();
+
+                    // 4. Preserve your Colony Report formatting logic
+                    bodyHtml = bodyHtml.replace(
+                        /(?:<br\s*\/?>\s*)+Colony Name/gi,
+                        '<span class="custom-fed-break-block">Colony Name'
+                    );
+                    if (bodyHtml.includes('custom-fed-break-block')) {
+                        bodyHtml += '</span>';
+                    }
+
+                    const chatLine = document.createElement('div');
+                    chatLine.className = 'custom-chat-line';
+                    chatLine.innerHTML = `
+                        <div>
+                            <span class="custom-chat-username">${username}</span>
+                            <span class="custom-chat-timestamp">${timestamp}</span>
+                        </div>
+                        <div class="custom-chat-body-text" style="margin-top:2px;">${bodyHtml}</div>
+                    `;
+                    container.appendChild(chatLine);
+                }
+            });
+
+            container.scrollTop = container.scrollHeight;
+        } catch(e) {
+            console.error("Error refreshing Fed feed:", e);
+        }
+    });
 }
-
-// Render interface safely
+// 4. Interface Layout Builder
 function renderEmbeddedBottomChat() {
+    if (chatFeatureEnabledState === false) {
+        const existingCustomChat = document.querySelector('.custom-bottom-chat-panel');
+        if (existingCustomChat) existingCustomChat.remove();
+
+        const oldBar = document.getElementById('SBar');
+        if (oldBar) {
+            oldBar.style.setProperty('display', 'block', 'important');
+            oldBar.style.visibility = 'visible';
+            oldBar.style.opacity = '1';
+        }
+        return;
+    }
+
     if (document.querySelector('.custom-bottom-chat-panel')) return;
     if (!document.body) return;
 
-    // Soft hide legacy element if present
     const oldBar = document.getElementById('SBar');
-    if (oldBar) oldBar.style.display = 'none';
+    if (oldBar) oldBar.style.setProperty('display', 'none', 'important');
+
+    currentChatTab = localStorage.getItem('gc_custom_chat_tab') || 'public';
 
     const chatPanel = document.createElement('div');
     chatPanel.className = 'custom-bottom-chat-panel';
@@ -1478,53 +1607,53 @@ function renderEmbeddedBottomChat() {
     
     document.body.appendChild(chatPanel);
 
-    async function handlePostSubmission() {
+    function handlePostSubmission() {
         const messageText = textInput.value.trim();
         if (!messageText || isSubmitting) return;
 
         isSubmitting = true;
         textInput.disabled = true;
         sendBtn.disabled = true;
-        const sid = getGcSessionId();
-
-        try {
-            if (currentChatTab === 'public') {
-                const url = sid ? `i.cfm?&${sid}&popup=msgsector` : `i.cfm?popup=msgsector`;
-                const res = await fetch(url, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: `chat=${encodeURIComponent(messageText)}&remLen2=${150 - messageText.length}`,
-                    credentials: 'same-origin'
-                });
-                if (res.ok) {
-                    textInput.value = '';
-                    await updatePublicFeed(publicFeedDisplay);
+        
+        fetchActiveSessionId(async function(sid) {
+            try {
+                if (currentChatTab === 'public') {
+                    const url = sid ? `i.cfm?&${sid}&popup=msgsector` : `i.cfm?popup=msgsector`;
+                    const res = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: `chat=${encodeURIComponent(messageText)}&remLen2=${150 - messageText.length}`,
+                        credentials: 'same-origin'
+                    });
+                    if (res.ok) {
+                        textInput.value = '';
+                        updatePublicFeed(publicFeedDisplay, true);
+                    }
+                } else {
+                    const url = sid ? `i.cfm?&${sid}&f=fed_forum` : `i.cfm?f=fed_forum`;
+                    const res = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: `forum2=${encodeURIComponent(messageText)}&remLen2=${5000 - messageText.length}&submitflag=Post+Message`,
+                        credentials: 'same-origin'
+                    });
+                    if (res.ok) {
+                        textInput.value = '';
+                        refreshFedFeedFromServer(fedFeedDisplay);
+                    }
                 }
-            } else {
-                const url = sid ? `i.cfm?&${sid}&f=fed_forum` : `i.cfm?f=fed_forum`;
-                const res = await fetch(url, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: `forum2=${encodeURIComponent(messageText)}&remLen2=${5000 - messageText.length}&submitflag=Post+Message`,
-                    credentials: 'same-origin'
-                });
-                if (res.ok) {
-                    textInput.value = '';
-                    await refreshFedFeedFromServer(fedFeedDisplay);
-                }
+            } catch (e) { console.error(e); } finally {
+                isSubmitting = false;
+                textInput.disabled = false;
+                sendBtn.disabled = false;
+                textInput.focus();
             }
-        } catch (e) {
-            console.error(e);
-        } finally {
-            isSubmitting = false;
-            textInput.disabled = false;
-            sendBtn.disabled = false;
-            textInput.focus();
-        }
+        });
     }
 
     publicTabBtn.addEventListener('click', () => {
         currentChatTab = 'public';
+        localStorage.setItem('gc_custom_chat_tab', 'public');
         fedTabBtn.classList.remove('active');
         publicTabBtn.classList.add('active');
         fedFeedDisplay.classList.remove('active');
@@ -1534,16 +1663,20 @@ function renderEmbeddedBottomChat() {
         updatePublicFeed(publicFeedDisplay);
     });
 
-    fedTabBtn.addEventListener('click', async () => {
+    fedTabBtn.addEventListener('click', () => {
         currentChatTab = 'fed';
+        localStorage.setItem('gc_custom_chat_tab', 'fed');
         publicTabBtn.classList.remove('active');
         fedTabBtn.classList.add('active');
         publicFeedDisplay.classList.remove('active');
         fedFeedDisplay.classList.add('active');
         textInput.placeholder = 'Type federation message...';
         textInput.maxLength = 5000;
-        fedFeedDisplay.innerHTML = '<div style="color:gray;text-align:center;margin-top:20px;">Loading Fed...</div>';
-        await refreshFedFeedFromServer(fedFeedDisplay);
+        
+        if (!fedFeedDisplay.innerHTML.trim() || fedFeedDisplay.innerHTML.includes('No federation messages')) {
+            fedFeedDisplay.innerHTML = '<div style="color:gray;text-align:center;margin-top:20px;">Loading Fed...</div>';
+        }
+        refreshFedFeedFromServer(fedFeedDisplay);
     });
 
     sendBtn.addEventListener('click', handlePostSubmission);
@@ -1555,14 +1688,20 @@ function renderEmbeddedBottomChat() {
     else refreshFedFeedFromServer(fedFeedDisplay);
 }
 
-// 1. Safe, light, non-breaking continuous content loop loader
+// 5. 7-Second Sync Interval Engine
 setInterval(() => {
-    // If a page transition completely wiped out our chat panel box, reconstruct it cleanly
+    if (chatFeatureEnabledState === false) {
+        const existingCustomChat = document.querySelector('.custom-bottom-chat-panel');
+        if (existingCustomChat) existingCustomChat.remove();
+        return; 
+    }
+
     if (!document.querySelector('.custom-bottom-chat-panel')) {
         renderEmbeddedBottomChat();
     }
     
-    // Refresh feed data silently inside the containers
+    currentChatTab = localStorage.getItem('gc_custom_chat_tab') || currentChatTab;
+
     if (currentChatTab === 'public') {
         const publicBox = document.querySelector('.custom-bottom-chat-panel .custom-chat-feed-container.active');
         if (publicBox) updatePublicFeed(publicBox);
@@ -1570,9 +1709,9 @@ setInterval(() => {
         const fedBox = document.querySelector('.custom-bottom-chat-panel .custom-chat-feed-container.active');
         if (fedBox) refreshFedFeedFromServer(fedBox);
     }
-}, 7000); // Ticks smoothly every 7 seconds without stressing the CPU or server
+}, 7000);
 
-// Run instantly on first execution injection
+// 6. Execution Initializers
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', renderEmbeddedBottomChat);
 } else {
