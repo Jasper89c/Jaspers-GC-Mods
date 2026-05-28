@@ -2,9 +2,9 @@
 document.addEventListener('DOMContentLoaded', () => {
     chrome.storage.local.get([
         'assimEnabled', 'infectEnabled', 'fedLazy', 'fedFull',
-        'clusterCollapsed', 'similareCollapsed', 'viralCollapsed'
+        'clusterCollapsed', 'similareCollapsed', 'viralCollapsed', 'autoContinue', 'autoExplore'
     ], (res) => {
-        
+
         // 1. Assimilate Status Card Badge
         const assimStatus = document.getElementById('dash-assim-status');
         if (assimStatus) {
@@ -65,6 +65,78 @@ document.addEventListener('DOMContentLoaded', () => {
             hideViralCheck.checked = !res.viralCollapsed;
             hideViralCheck.addEventListener('change', () => {
                 chrome.storage.local.set({ viralCollapsed: !hideViralCheck.checked });
+            });
+        }
+
+        // =================================================================
+        // 5. FIXED: Auto Click Automation Switches
+        // =================================================================
+        const autoContinueCheck = document.getElementById('dash-auto-continue');
+        const autoExploreCheck = document.getElementById('dash-auto-explore');
+
+        if (autoContinueCheck) {
+            // If autoContinue isn't explicitly false, default it to true (ON)
+            autoContinueCheck.checked = (res.autoContinue !== false);
+
+            autoContinueCheck.addEventListener('change', () => {
+                // Save exactly what the checkbox says: checked = true, unchecked = false
+                chrome.storage.local.set({ autoContinue: autoContinueCheck.checked });
+            });
+        }
+
+        if (autoExploreCheck) {
+            // If autoExplore isn't explicitly false, default it to true (ON)
+            autoExploreCheck.checked = (res.autoExplore !== false);
+
+            autoExploreCheck.addEventListener('change', () => {
+                // Save exactly what the checkbox says: checked = true, unchecked = false
+                chrome.storage.local.set({ autoExplore: autoExploreCheck.checked });
+            });
+        }
+        // =================================================================
+        // 6. MIGRATED: Feature & Intel Toggle Controls
+        // =================================================================
+        const assimCheck = document.getElementById('dash-assim-toggle');
+        const infectCheck = document.getElementById('dash-infect-toggle');
+        const fedLazyCheck = document.getElementById('dash-fed-lazy');
+        const fedFullCheck = document.getElementById('dash-fed-full');
+
+        // Synchronize check states based on saved memory keys
+        if (assimCheck) {
+            assimCheck.checked = !!res.assimEnabled;
+            assimCheck.addEventListener('change', () => {
+                chrome.storage.local.set({ assimEnabled: assimCheck.checked });
+            });
+        }
+
+        if (infectCheck) {
+            infectCheck.checked = !!res.infectEnabled;
+            infectCheck.addEventListener('change', () => {
+                chrome.storage.local.set({ infectEnabled: infectCheck.checked });
+            });
+        }
+
+        if (fedLazyCheck) {
+            fedLazyCheck.checked = !!res.fedLazy;
+            fedLazyCheck.addEventListener('change', () => {
+                // If turning on Lazy Load, uncheck Full Load to prevent conflict
+                if (fedLazyCheck.checked && fedFullCheck) fedFullCheck.checked = false;
+                chrome.storage.local.set({
+                    fedLazy: fedLazyCheck.checked,
+                    fedFull: fedFullCheck ? fedFullCheck.checked : false
+                });
+            });
+        }
+
+        if (fedFullCheck) {
+            fedFullCheck.checked = !!res.fedFull;
+            fedFullCheck.addEventListener('change', () => {
+                // If turning on Full Load, uncheck Lazy Load to prevent conflict
+                if (fedFullCheck.checked && fedLazyCheck) fedLazyCheck.checked = false;
+                chrome.storage.local.set({
+                    fedFull: fedFullCheck.checked,
+                    fedLazy: fedLazyCheck ? fedLazyCheck.checked : false
+                });
             });
         }
     });

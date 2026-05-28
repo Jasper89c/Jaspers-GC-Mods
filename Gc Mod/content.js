@@ -2,19 +2,43 @@
  */
 let sid = null;
 
-// === 1. AUTO-EXPLORE FEATURE ===
-(function autoExplore() {
-    const exploreBtn = document.querySelector('input[type="button"][onclick*="com_explore"]');
-    if (exploreBtn) {
-        exploreBtn.click();
-    }
-})();
+// Global flags to hold our automation states
+let autoContinueEnabled = true;
+let autoExploreEnabled = true;
 
-function autoClickContinue() {
-    const buttons = document.querySelectorAll('input[type="button"][onclick*="f=com_col"]');
-    const btn = Array.from(buttons).find(b => b.value.trim().toLowerCase() === 'continue');
-    if (btn) btn.click();
-}
+// 1. Fetch current settings from memory immediately when the page loads
+chrome.storage.local.get(['autoContinue', 'autoExplore'], (res) => {
+    autoContinueEnabled = (res.autoContinue !== false);
+    autoExploreEnabled = (res.autoExplore !== false);
+});
+
+// 2. Listen live. If you flip a switch on the dashboard, update the flags instantly
+chrome.storage.onChanged.addListener((changes, namespace) => {
+    if (namespace === 'local') {
+        if (changes.autoContinue) autoContinueEnabled = changes.autoContinue.newValue;
+        if (changes.autoExplore) autoExploreEnabled = changes.autoExplore.newValue;
+    }
+});
+
+// 3. The Automation Loop (Running your exact working clickers)
+setInterval(function() {
+    // Only execute if dashboard says it's enabled
+    if (autoExploreEnabled) {
+        const exploreBtn = document.querySelector('input[type="button"][onclick*="com_explore"]');
+        if (exploreBtn) {
+            exploreBtn.click();
+        }
+    }
+
+    // Only execute if dashboard says it's enabled
+    if (autoContinueEnabled) {
+        const buttons = document.querySelectorAll('input[type="button"][onclick*="f=com_col"]');
+        const btn = Array.from(buttons).find(b => b.value.trim().toLowerCase() === 'continue');
+        if (btn) {
+            btn.click();
+        }
+    }
+}, 250);
 
 // === 2. MAIN EXTENSION PANEL LOGIC ===
 chrome.storage.local.get(['panelPos', 'presets', 'storedSid', 'assimEnabled', 'infectEnabled', 'clusterCollapsed', 'similareCollapsed', 'viralCollapsed', 'fedLazy', 'fedFull', 'clusterMineral'], (res) => {
@@ -103,44 +127,6 @@ chrome.storage.local.get(['panelPos', 'presets', 'storedSid', 'assimEnabled', 'i
             </div>
 
             <div id="gcc-cluster-status" style="font-size:9px; color:#888; text-align:center; margin-top:4px; height:10px; padding-bottom:4px;"></div>
-        </div>
-
-        <div style="border-bottom:1px solid #333;">
-            <div id="gcc-features-header" style="padding:8px; background:#1f2842; cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
-                <div style="font-size:10px; color:#ff9800; font-weight:bold; letter-spacing:0.5px;">FEATURES</div>
-                <span id="gcc-features-arrow" style="font-size:10px; color:#aaa;">▾</span>
-            </div>
-            <div id="gcc-features-body" style="padding:0 8px 8px; background:#1f2842;">
-                <div style="display:flex; flex-direction:column; gap:4px; padding-top:6px;">
-                    <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-size:11px; color:#ddd; margin-bottom:4px;">
-                        <input type="checkbox" id="gcc-assim-toggle" style="cursor:pointer;">
-                        Assimilate Buttons
-                    </label>
-                    <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-size:11px; color:#ddd;">
-                        <input type="checkbox" id="gcc-infect-toggle" style="cursor:pointer;">
-                        Infect Buttons
-                    </label>
-                </div>
-            </div>
-        </div>
-
-        <div style="border-bottom:1px solid #333;">
-            <div id="gcc-fed-header" style="padding:8px; background:#1f2842; cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
-                <div style="font-size:10px; color:#ff9800; font-weight:bold; letter-spacing:0.5px;">FEDERATION NAMES</div>
-                <span id="gcc-fed-arrow" style="font-size:10px; color:#aaa;">▾</span>
-            </div>
-            <div id="gcc-fed-body" style="padding:0 8px 8px; background:#1f2842;">
-                <div style="display:flex; flex-direction:column; gap:4px; padding-top:6px;">
-                    <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-size:11px; color:#ddd; margin-bottom:4px;">
-                        <input type="checkbox" id="gcc-fed-lazy" style="cursor:pointer;">
-                        Lazy Load (hover)
-                    </label>
-                    <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-size:11px; color:#ddd;">
-                        <input type="checkbox" id="gcc-fed-full" style="cursor:pointer;">
-                        Full Load
-                    </label>
-                </div>
-            </div>
         </div>
 
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1px; background:#444; border-top:1px solid #444;">
@@ -436,15 +422,11 @@ function setupLogic(container, presets, sid, assimEnabled, infectEnabled, cluste
     // Trigger the update check automatically
     checkForUpdates();
 
-    // Add this line inside your setupLogic execution function block in content.js
     const dashLink = document.getElementById('lnk-dashboard');
     if (dashLink) {
         dashLink.addEventListener('click', (e) => {
             e.preventDefault();
-        
-            // Use the chrome runtime API to pull the accurate internal address
             const dashboardUrl = chrome.runtime.getURL('dashboard.html');
-        
             window.open(dashboardUrl, '_blank');
         });
     }
@@ -465,54 +447,56 @@ function setupLogic(container, presets, sid, assimEnabled, infectEnabled, cluste
     };
 
     const btnArea = document.getElementById('gcc-btn-area');
-    for (let i = 1; i <= 5; i++) {
-        const btn = document.createElement('button');
-        btn.innerText = `P${i}`;
-        btn.title = getTooltip(presets[i]);
-        btn.style.cssText = `flex:1; padding:6px 0; cursor:pointer; border-radius:4px; border:1px solid #444; font-size:10px; background:${presets[i] ? "#2e7d32" : "#1f2842"}; color:white; font-weight:bold;`;
+    if (btnArea) {
+        for (let i = 1; i <= 5; i++) {
+            const btn = document.createElement('button');
+            btn.innerText = `P${i}`;
+            btn.title = getTooltip(presets[i]);
+            btn.style.cssText = `flex:1; padding:6px 0; cursor:pointer; border-radius:4px; border:1px solid #444; font-size:10px; background:${presets[i] ? "#2e7d32" : "#1f2842"}; color:white; font-weight:bold;`;
 
-        btn.onclick = () => {
-            if (!presets[i]) return alert("Preset empty.");
-            btn.innerText = "⏳";
-            const bWin = window.open(`i.cfm?&${sid}&f=com_ship`, '_blank', 'width=100,height=100,left=10000,top=10000');
-            const t = setInterval(() => {
-                try {
-                    if (bWin.document.readyState === 'complete') {
-                        clearInterval(t);
-                        Object.keys(presets[i]).forEach(id => {
-                            const inp = bWin.document.getElementById(id) || bWin.document.getElementsByName(id)[0];
-                            if (inp) inp.value = presets[i][id].qty;
-                        });
-                        bWin.document.querySelector('input[name="Build"]').click();
-                        setTimeout(() => { bWin.close(); window.location.reload(); }, 1200);
-                    }
-                } catch(e){}
-            }, 500);
-        };
+            btn.onclick = () => {
+                if (!presets[i]) return alert("Preset empty.");
+                btn.innerText = "⏳";
+                const bWin = window.open(`i.cfm?&${sid}&f=com_ship`, '_blank', 'width=100,height=100,left=10000,top=10000');
+                const t = setInterval(() => {
+                    try {
+                        if (bWin.document.readyState === 'complete') {
+                            clearInterval(t);
+                            Object.keys(presets[i]).forEach(id => {
+                                const inp = bWin.document.getElementById(id) || bWin.document.getElementsByName(id)[0];
+                                if (inp) inp.value = presets[i][id].qty;
+                            });
+                            bWin.document.querySelector('input[name="Build"]').click();
+                            setTimeout(() => { bWin.close(); window.location.reload(); }, 1200);
+                        }
+                    } catch(e){}
+                }, 500);
+            };
 
-        btn.oncontextmenu = (e) => {
-            e.preventDefault();
-            const inputs = document.querySelectorAll('.gc-builder-input');
-            let data = {};
-            inputs.forEach(inp => {
-                if (inp.value > 0) {
-                    const card = inp.closest('.gc-builder-card');
-                    let shipName = "Unknown";
-                    if (card) {
-                        const titleEl = card.querySelector('.gc-builder-card__titleline');
-                        if (titleEl) shipName = titleEl.innerText.replace(/\n/g, ' ').trim();
+            btn.oncontextmenu = (e) => {
+                e.preventDefault();
+                const inputs = document.querySelectorAll('.gc-builder-input');
+                let data = {};
+                inputs.forEach(inp => {
+                    if (inp.value > 0) {
+                        const card = inp.closest('.gc-builder-card');
+                        let shipName = "Unknown";
+                        if (card) {
+                            const titleEl = card.querySelector('.gc-builder-card__titleline');
+                            if (titleEl) shipName = titleEl.innerText.replace(/\n/g, ' ').trim();
+                        }
+                        data[inp.name || inp.id] = { name: shipName, qty: inp.value };
                     }
-                    data[inp.name || inp.id] = { name: shipName, qty: inp.value };
-                }
-            });
-            if (Object.keys(data).length === 0) return alert("Enter quantities first.");
-            presets[i] = data;
-            chrome.storage.local.set({ presets }, () => {
-                btn.style.background = "#2e7d32";
-                btn.title = getTooltip(data);
-            });
-        };
-        btnArea.appendChild(btn);
+                });
+                if (Object.keys(data).length === 0) return alert("Enter quantities first.");
+                presets[i] = data;
+                chrome.storage.local.set({ presets }, () => {
+                    btn.style.background = "#2e7d32";
+                    btn.title = getTooltip(data);
+                });
+            };
+            btnArea.appendChild(btn);
+        }
     }
 
     // 3. Link Sync
@@ -526,12 +510,14 @@ function setupLogic(container, presets, sid, assimEnabled, infectEnabled, cluste
     // 4. Dragging Logic
     const handle = document.getElementById('gcc-handle');
     let dragging = false, offset = { x: 0, y: 0 };
-    handle.onmousedown = (e) => { if(e.target.id === 'gcc-refresh-btn') return; dragging = true; offset.x = e.clientX - container.offsetLeft; offset.y = e.clientY - container.offsetTop; };
-    document.onmousemove = (e) => { if (dragging) { container.style.left = (e.clientX - offset.x) + 'px'; container.style.top = (e.clientY - offset.y) + 'px'; container.style.right = 'auto'; } };
-    document.onmouseup = () => { if (dragging) { dragging = false; chrome.storage.local.set({ panelPos: { top: container.style.top, left: container.style.left } }); } };
+    if (handle) {
+        handle.onmousedown = (e) => { if(e.target.id === 'gcc-refresh-btn') return; dragging = true; offset.x = e.clientX - container.offsetLeft; offset.y = e.clientY - container.offsetTop; };
+        document.onmousemove = (e) => { if (dragging) { container.style.left = (e.clientX - offset.x) + 'px'; container.style.top = (e.clientY - offset.y) + 'px'; container.style.right = 'auto'; } };
+        document.onmouseup = () => { if (dragging) { dragging = false; chrome.storage.local.set({ panelPos: { top: container.style.top, left: container.style.left } }); } };
+    }
 
     // 5. Ship hover tooltips
-    attachShipHoverTooltips();
+    if (typeof attachShipHoverTooltips === 'function') attachShipHoverTooltips();
 
     // 6. Add ship builder batch buttons on the ship page only
     try {
@@ -557,29 +543,7 @@ function setupLogic(container, presets, sid, assimEnabled, infectEnabled, cluste
         setTimeout(addSimulationsLinks, 500);
     } catch (e) {}
 
-    // 9a. Assimilate toggle
-    const assimToggle = document.getElementById('gcc-assim-toggle');
-    assimToggle.checked = assimEnabled;
-
-    const removeAssimilateButtons = () => {
-        document.querySelectorAll('tr[data-gcc-assim-added]').forEach(row => {
-            const lastTd = row.querySelector('td:last-child');
-            if (lastTd) lastTd.remove();
-            delete row.dataset.gccAssimAdded;
-        });
-        const header = document.querySelector('.gcc-assim-header');
-        if (header) header.remove();
-    };
-
-    assimToggle.addEventListener('change', () => {
-        chrome.storage.local.set({ assimEnabled: assimToggle.checked });
-        if (assimToggle.checked) {
-            addAssimilateButtons(sid);
-        } else {
-            removeAssimilateButtons();
-        }
-    });
-
+    // --- 9. Background Injections (Driven entirely via Dashboard settings now) ---
     if (assimEnabled) {
         try {
             addAssimilateButtons(sid);
@@ -587,28 +551,6 @@ function setupLogic(container, presets, sid, assimEnabled, infectEnabled, cluste
             setTimeout(() => addAssimilateButtons(sid), 1000);
         } catch (e) {}
     }
-    // 9b. infect toggle
-    const infectToggle = document.getElementById('gcc-infect-toggle');
-    infectToggle.checked = infectEnabled;
-
-    const removeInfectButtons = () => {
-        document.querySelectorAll('tr[data-gcc-infect-added]').forEach(row => {
-            const lastTd = row.querySelector('td:last-child');
-            if (lastTd) lastTd.remove();
-            delete row.dataset.gccInfectAdded;
-        });
-        const header = document.querySelector('.gcc-infect-header');
-        if (header) header.remove();
-    };
-
-    infectToggle.addEventListener('change', () => {
-        chrome.storage.local.set({ infectEnabled: infectToggle.checked });
-        if (infectToggle.checked) {
-            addInfectButtons(sid);
-        } else {
-            removeInfectButtons();
-        }
-    });
 
     if (infectEnabled) {
         try {
@@ -623,21 +565,20 @@ function setupLogic(container, presets, sid, assimEnabled, infectEnabled, cluste
         autoClickContinue();
     } catch(e) {}
 
-    // === 11. Core Helper Section HTML Visibility & Persistent Collapse Controls ===
-    
-    // 1. Controls total removal from HTML layout via your Dashboard switches
+    // 11. Federation live load injection states
+    if (fedLazy) { try { attachFedLazy(sid); } catch(e){} }
+    if (fedFull) { try { attachFedFull(sid); } catch(e){} }
+
+    // === 12. Core Cluster Section Visibility & Persistent Collapse Controls ===
     const applyVisibility = (wrapperId, isHiddenFromDashboard) => {
         const wrapper = document.getElementById(wrapperId);
-        if (wrapper) {
-            wrapper.style.display = isHiddenFromDashboard ? 'none' : 'block';
-        }
+        if (wrapper) wrapper.style.display = isHiddenFromDashboard ? 'none' : 'block';
     };
 
     applyVisibility('gcc-reg-wrapper', clusterCollapsed);
     applyVisibility('gcc-coll-wrapper', similareCollapsed);
     applyVisibility('gcc-viral-wrapper', viralCollapsed);
 
-    // 2. Controls internal slide drawers for remaining panels
     const applyCollapse = (bodyId, arrowId, isCollapsed) => {
         const body = document.getElementById(bodyId);
         const arrow = document.getElementById(arrowId);
@@ -646,105 +587,55 @@ function setupLogic(container, presets, sid, assimEnabled, infectEnabled, cluste
         arrow.textContent = isCollapsed ? '▸' : '▾';
     };
 
-    // Pull saved collapse memory for ALL sections, defaulting to false (open) if not set yet
     chrome.storage.local.get([
         'regManualCollapsed', 
         'collManualCollapsed', 
-        'viralManualCollapsed', 
-        'featuresCollapsed', 
-        'fedCollapsed'
+        'viralManualCollapsed'
     ], (result) => {
         let regInner = result.regManualCollapsed || false;
         let collInner = result.collManualCollapsed || false;
         let viralInner = result.viralManualCollapsed || false;
-        let featuresCollapsed = result.featuresCollapsed || false;
-        let fedCollapsed = result.fedCollapsed || false;
 
-        // Apply saved visibility configurations immediately on load
+        // Apply internal slide drawer visibility settings
         applyCollapse('gcc-cluster-body', 'gcc-cluster-arrow', regInner);
         applyCollapse('gcc-similare-body', 'gcc-similare-arrow', collInner);
         applyCollapse('gcc-viral-body', 'gcc-viral-arrow', viralInner);
-        applyCollapse('gcc-features-body', 'gcc-features-arrow', featuresCollapsed);
-        applyCollapse('gcc-fed-body', 'gcc-fed-arrow', fedCollapsed);
 
-        // Click triggers for Regular Cluster (Saves state)
-        document.getElementById('gcc-cluster-header').onclick = () => { 
-            regInner = !regInner; 
-            applyCollapse('gcc-cluster-body', 'gcc-cluster-arrow', regInner); 
-            chrome.storage.local.set({ regManualCollapsed: regInner });
-        };
-
-        // Click triggers for Collective Cluster (Saves state)
-        document.getElementById('gcc-similare-header').onclick = () => { 
-            collInner = !collInner; 
-            applyCollapse('gcc-similare-body', 'gcc-similare-arrow', collInner); 
-            chrome.storage.local.set({ collManualCollapsed: collInner });
-        };
-
-        // Click triggers for Viral Cluster (Saves state)
-        document.getElementById('gcc-viral-header').onclick = () => { 
-            viralInner = !viralInner; 
-            applyCollapse('gcc-viral-body', 'gcc-viral-arrow', viralInner); 
-            chrome.storage.local.set({ viralManualCollapsed: viralInner });
-        };
-
-        // Click triggers for Features panel (Saves state)
-        document.getElementById('gcc-features-header').onclick = () => { 
-            featuresCollapsed = !featuresCollapsed; 
-            applyCollapse('gcc-features-body', 'gcc-features-arrow', featuresCollapsed); 
-            chrome.storage.local.set({ featuresCollapsed });
-        };
-
-        // Click triggers for Federation Names panel (Saves state)
-        document.getElementById('gcc-fed-header').onclick = () => { 
-            fedCollapsed = !fedCollapsed; 
-            applyCollapse('gcc-fed-body', 'gcc-fed-arrow', fedCollapsed); 
-            chrome.storage.local.set({ fedCollapsed });
-        };
-    });
-    // 12. Federation name toggles
-    const fedLazyToggle = document.getElementById('gcc-fed-lazy');
-    const fedFullToggle = document.getElementById('gcc-fed-full');
-
-    fedLazyToggle.checked = fedLazy;
-    fedFullToggle.checked = fedFull;
-
-    // Apply on load
-    if (fedLazy) attachFedLazy(sid);
-    if (fedFull) attachFedFull(sid);
-
-    fedLazyToggle.addEventListener('change', () => {
-        if (fedLazyToggle.checked) {
-            fedFullToggle.checked = false;
-            chrome.storage.local.set({ fedLazy: true, fedFull: false });
-            removeFedNames();
-            attachFedLazy(sid);
-        } else {
-            chrome.storage.local.set({ fedLazy: false });
-            removeFedNames();
+        // Click listeners for remaining panels
+        const regHeader = document.getElementById('gcc-cluster-header');
+        if (regHeader) {
+            regHeader.onclick = () => { 
+                regInner = !regInner; 
+                applyCollapse('gcc-cluster-body', 'gcc-cluster-arrow', regInner); 
+                chrome.storage.local.set({ regManualCollapsed: regInner });
+            };
         }
-    });
 
-    fedFullToggle.addEventListener('change', () => {
-        if (fedFullToggle.checked) {
-            fedLazyToggle.checked = false;
-            chrome.storage.local.set({ fedFull: true, fedLazy: false });
-            removeFedNames();
-            attachFedFull(sid);
-        } else {
-            chrome.storage.local.set({ fedFull: false });
-            removeFedNames();
+        const collHeader = document.getElementById('gcc-similare-header');
+        if (collHeader) {
+            collHeader.onclick = () => { 
+                collInner = !collInner; 
+                applyCollapse('gcc-similare-body', 'gcc-similare-arrow', collInner); 
+                chrome.storage.local.set({ collManualCollapsed: collInner });
+            };
+        }
+
+        const viralHeader = document.getElementById('gcc-viral-header');
+        if (viralHeader) {
+            viralHeader.onclick = () => { 
+                viralInner = !viralInner; 
+                applyCollapse('gcc-viral-body', 'gcc-viral-arrow', viralInner); 
+                chrome.storage.local.set({ viralManualCollapsed: viralInner });
+            };
         }
     });
 
     const mineralSelect = document.getElementById('gcc-cluster-mineral');
     if (mineralSelect) {
-        // If a saved state exists in local storage, initialize it
         chrome.storage.local.get(['clusterMineral'], (stored) => {
             if (stored.clusterMineral) mineralSelect.value = stored.clusterMineral;
         });
 
-        // Save configuration settings dynamically when clicked
         mineralSelect.addEventListener('change', () => {
             chrome.storage.local.set({ clusterMineral: mineralSelect.value });
         });
