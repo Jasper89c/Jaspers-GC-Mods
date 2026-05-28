@@ -111,6 +111,9 @@ download: the GC Mod folder from "releases" and extract somewhere.
 2. Use the helper panel for quick actions.
 3. Hover ship names to see tooltip stats.
 4. On the disband table, click `10%`, `50%`, or `All` to fill the disband amount automatically.
+5. many other changes!
+
+acssess the dashboard to enable/disable changes that you want or dont want!
 
 ## Notes
 
