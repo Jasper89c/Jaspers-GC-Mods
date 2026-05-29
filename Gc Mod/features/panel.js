@@ -1,6 +1,6 @@
 chrome.storage.local.get(['panelPos', 'presets', 'storedSid', 'assimEnabled', 'infectEnabled',
      'clusterCollapsed', 'similareCollapsed', 'viralCollapsed', 'fedLazy', 'fedFull',
-      'clusterMineral', 'simsLinksEnabled', 'chatFeatureEnabled', 'batchButtonsEnabled', 'quickBuildEnabled'], (res) => {
+      'clusterMineral', 'simsLinksEnabled', 'chatFeatureEnabled', 'batchButtonsEnabled', 'quickBuildEnabled', 'battleLogsEnabled'], (res) => {
     const pos = res.panelPos || { top: '20px', left: 'auto', right: '20px' };
     const savedPresets = res.presets || {};
 
@@ -12,6 +12,7 @@ chrome.storage.local.get(['panelPos', 'presets', 'storedSid', 'assimEnabled', 'i
     chatFeatureEnabledState = (res.chatFeatureEnabled !== false);
     batchButtonsEnabledState = (res.batchButtonsEnabled !== false);
     quickBuildEnabledState = (res.quickBuildEnabled !== false);
+    battleLogsEnabledState = (res.battleLogsEnabled !== false);
 
     const container = document.createElement('div');
     container.id = 'gcc-preset-panel';
@@ -267,6 +268,9 @@ function setupLogic(container, presets, sid, assimEnabled, infectEnabled, cluste
     }
     if (quickBuildEnabledState) {
         observeUntil('table.gc-colony-list-table', attachQuickBuild);
+    }
+    if (battleLogsEnabledState) {
+        observeUntil('table.gc-battle-prev-table', attachBattleLogs);
     }
 
     // Federation live load

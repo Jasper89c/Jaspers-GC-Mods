@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Jaspers GC Mods",
-  "version": "2.0",
+  "version": "2.1",
   "permissions": [
     "storage",
     "webRequest"
@@ -30,6 +30,7 @@
         "features/updates.js",
         "features/chat.js",
         "features/quick-build.js",
+        "features/battle-logs.js",
         "features/panel.js"
       ],
       "css": ["styles.css"],

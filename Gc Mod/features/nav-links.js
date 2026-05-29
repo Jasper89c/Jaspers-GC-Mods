@@ -1,5 +1,5 @@
 function addImportantEventsLink() {
-    console.log('[GC Helper] addImportantEventsLink called');
+    if (!/[?&]f=com/i.test(window.location.href)) return;
 
     const navBar = document.querySelector('.icon-bar2');
     if (!navBar) { console.log('[GC Helper] .icon-bar2 not found'); return; }

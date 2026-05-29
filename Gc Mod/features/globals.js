@@ -6,6 +6,7 @@ let simsLinksEnabled = true;
 let batchButtonsEnabledState = true;
 let chatFeatureEnabledState = true;
 let quickBuildEnabledState = true;
+let battleLogsEnabledState = true;
 
 chrome.storage.local.get(['autoContinue', 'autoExplore'], (res) => {
     autoContinueEnabled = (res.autoContinue !== false);
@@ -29,6 +30,10 @@ chrome.storage.onChanged.addListener((changes, namespace) => {
 
     if (changes.quickBuildEnabled) {
         quickBuildEnabledState = changes.quickBuildEnabled.newValue !== false;
+    }
+
+    if (changes.battleLogsEnabled) {
+        battleLogsEnabledState = changes.battleLogsEnabled.newValue !== false;
     }
 
     if (changes.chatFeatureEnabled) {
