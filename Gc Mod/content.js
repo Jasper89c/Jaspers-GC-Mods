@@ -602,7 +602,9 @@ function setupLogic(container, presets, sid, assimEnabled, infectEnabled, cluste
             setTimeout(addSimulationsLinks, 500);
         } catch (e) { }
     }
-
+    try {
+        addImportantEventsLink();
+    } catch (e) { }
     
 
     // --- 9. Background Injections (Driven entirely via Dashboard settings now) ---
@@ -778,6 +780,21 @@ function addDisbandQuickCells() {
             disTd.dataset.gccQuickCellsAdded = '1';
         });
     });
+}
+
+function addImportantEventsLink() {
+    // Find the Missions link to use as a reference point
+    const missionsLink = document.querySelector('a[href*="f=com_mission"]');
+    if (!missionsLink) return;
+
+    // Create the new "Important Events" link
+    const eventsLink = document.createElement('a');
+    // We use ${sid} so it always uses your current Session ID
+    eventsLink.href = `i.cfm?&${sid}&f=com_empire&cm=4`;
+    eventsLink.textContent = "Important Events";
+
+    // Insert the new link immediately before "Missions"
+    missionsLink.insertAdjacentElement('beforebegin', eventsLink);
 }
 
 function addSimulationsLinks() {
@@ -1641,6 +1658,18 @@ function renderEmbeddedBottomChat() {
     
     document.body.appendChild(chatPanel);
 
+    // Add "All Messages" floating link
+    const allMessagesLink = document.createElement('a');
+    allMessagesLink.id = 'gcc-all-messages-link';
+    allMessagesLink.href = currentChatTab === 'public'
+        ? `https://gcc.wrindustries.com/i.cfm?&${sid}&f=com_msgsector`
+        : `https://gcc.wrindustries.com/i.cfm?f=fed_forum`;
+    allMessagesLink.textContent = currentChatTab === 'public' ? "All Messages" : "Federation Forum";
+    allMessagesLink.target = "_blank"; // Open in new tab
+    allMessagesLink.style.cssText = "position: absolute; top: 28px; right: 10px; color: #e8b563; font-size: 11px; text-decoration: none; font-weight: bold; z-index: 10; cursor: pointer;";
+    allMessagesLink.title = currentChatTab === 'public' ? "View Full Message History" : "View Federation Discussion";
+    chatPanel.appendChild(allMessagesLink);
+
     function handlePostSubmission() {
         const messageText = textInput.value.trim();
         if (!messageText || isSubmitting) return;
@@ -1694,6 +1723,9 @@ function renderEmbeddedBottomChat() {
         publicFeedDisplay.classList.add('active');
         textInput.placeholder = 'Type public message...';
         textInput.maxLength = 150;
+        allMessagesLink.href = `https://gcc.wrindustries.com/i.cfm?&${sid}&f=com_msgsector`;
+        allMessagesLink.textContent = "All Messages";
+        allMessagesLink.title = "View Full Message History";
         updatePublicFeed(publicFeedDisplay);
     });
 
@@ -1706,6 +1738,9 @@ function renderEmbeddedBottomChat() {
         fedFeedDisplay.classList.add('active');
         textInput.placeholder = 'Type federation message...';
         textInput.maxLength = 5000;
+        allMessagesLink.href = `https://gcc.wrindustries.com/i.cfm?f=fed_forum`;
+        allMessagesLink.textContent = "Federation Forum";
+        allMessagesLink.title = "View Federation Discussion";
         
         if (!fedFeedDisplay.innerHTML.trim() || fedFeedDisplay.innerHTML.includes('No federation messages')) {
             fedFeedDisplay.innerHTML = '<div style="color:gray;text-align:center;margin-top:20px;">Loading Fed...</div>';
