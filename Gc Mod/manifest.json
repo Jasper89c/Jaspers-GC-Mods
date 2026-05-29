@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Jaspers GC Mods",
-  "version": "1.8",
+  "version": "2.0",
   "permissions": [
     "storage",
     "webRequest"
@@ -17,7 +17,21 @@
   "content_scripts": [
     {
       "matches": ["*://gcc.wrindustries.com/*"],
-      "js": ["content.js"],
+      "js": [
+        "features/globals.js",
+        "features/automation.js",
+        "features/cluster.js",
+        "features/federation.js",
+        "features/nav-links.js",
+        "features/ship-builder.js",
+        "features/ship-tooltips.js",
+        "features/disband.js",
+        "features/colony.js",
+        "features/updates.js",
+        "features/chat.js",
+        "features/quick-build.js",
+        "features/panel.js"
+      ],
       "css": ["styles.css"],
       "run_at": "document_end",
       "all_frames": true

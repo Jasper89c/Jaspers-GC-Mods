@@ -1,265 +1,290 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GC Helper - Feature Dashboard</title>
+    <title>GC Helper - Dashboard</title>
     <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
         :root {
-            --bg-main: #121212;
-            --bg-card: #1a1a1a;
-            --bg-header: #222222;
-            --border-color: #333333;
-            --accent-orange: #ff9800;
-            --text-primary: #ffffff;
-            --text-secondary: #aaaaaa;
-            --status-active: #2e7d32;
-            --status-disabled: #c0392b;
-            --link-blue: #9edcfe;
+            --bg:           #0d1117;
+            --bg-card:      #161b22;
+            --bg-hover:     #1c2128;
+            --border:       rgba(255,255,255,0.07);
+            --accent:       #ff9800;
+            --accent-dim:   rgba(255,152,0,0.12);
+            --accent-border:rgba(255,152,0,0.28);
+            --text:         #e6edf3;
+            --text-muted:   #7d8590;
+            --text-subtle:  #3d444d;
+            --shadow:       0 1px 3px rgba(0,0,0,0.5), 0 4px 16px rgba(0,0,0,0.3);
         }
 
         body {
-            font-family: Arial, sans-serif;
-            background-color: var(--bg-main);
-            color: var(--text-primary);
-            margin: 0;
-            padding: 40px 20px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 32px 24px;
+            font-size: 14px;
+            line-height: 1.5;
         }
 
-        .container {
-            max-width: 1100px;
-            margin: 0 auto;
-        }
+        .container { max-width: 1020px; margin: 0 auto; }
 
-        header {
-            border-bottom: 2px solid var(--border-color);
-            padding-bottom: 20px;
-            margin-bottom: 30px;
+        /* ── Header ── */
+        .header {
             display: flex;
-            justify-content: space-between;
             align-items: center;
+            gap: 16px;
+            padding: 18px 22px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow);
         }
 
-        h1 {
-            color: var(--accent-orange);
-            margin: 0;
-            font-size: 24px;
-            letter-spacing: 0.5px;
+        .header-logo {
+            font-size: 26px;
+            color: var(--accent);
+            line-height: 1;
+            user-select: none;
         }
 
-        .subtitle {
-            color: var(--text-secondary);
-            font-size: 13px;
-            margin-top: 5px;
+        .header-text h1 {
+            font-size: 17px;
+            font-weight: 700;
+            letter-spacing: -0.3px;
         }
 
+        .header-text p {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 1px;
+        }
+
+        .version {
+            margin-left: auto;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.4px;
+            color: var(--accent);
+            background: var(--accent-dim);
+            border: 1px solid var(--accent-border);
+            padding: 3px 10px;
+            border-radius: 20px;
+        }
+
+        /* ── Grid ── */
         .grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-            gap: 20px;
+            grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+            gap: 14px;
         }
 
+        /* ── Card ── */
         .card {
-            background-color: var(--bg-card);
-            border: 2px solid var(--border-color);
-            border-radius: 8px;
-            padding: 20px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            position: relative;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            transition: border-color 0.2s;
         }
 
-        /* Styling for the control dashboard panel card */
-        .card.settings-panel {
-            grid-column: 1 / -1;
-            /* Stretch across the entire top row */
-            background-color: #1e252f;
-            border-color: #2c3e50;
-        }
+        .card:hover { border-color: rgba(255,255,255,0.11); }
 
-        .settings-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 15px;
-            margin-top: 15px;
-        }
-
-        .toggle-control {
+        .card-header {
             display: flex;
             align-items: center;
             gap: 10px;
-            background: rgba(0, 0, 0, 0.2);
-            padding: 10px;
-            border-radius: 6px;
-            border: 1px solid #333;
-            cursor: pointer;
-            font-size: 13px;
+            padding: 13px 16px;
+            border-bottom: 1px solid var(--border);
+            background: rgba(255,255,255,0.02);
         }
 
-        .toggle-control input {
-            cursor: pointer;
-            width: 16px;
-            height: 16px;
-            accent-color: var(--accent-orange);
+        .card-icon {
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--accent-dim);
+            border-radius: 7px;
+            font-size: 15px;
         }
 
-        .card-content h3 {
-            margin: 0 0 10px 0;
-            font-size: 16px;
-            color: var(--link-blue);
-            letter-spacing: 0.5px;
-        }
-
-        .card-content p {
-            margin: 0;
-            font-size: 12px;
-            color: var(--text-secondary);
-            line-height: 1.6;
-        }
-
-        .badge {
-            align-self: flex-start;
-            margin-top: 15px;
-            font-size: 10px;
-            font-weight: bold;
-            padding: 4px 8px;
-            border-radius: 4px;
+        .card-title {
+            font-size: 11px;
+            font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
-            background-color: var(--border-color);
-            color: var(--text-secondary);
+            letter-spacing: 0.9px;
+            color: var(--accent);
         }
 
-        .badge.active {
-            background-color: var(--status-active);
-            color: white;
+        /* ── Toggle row ── */
+        .toggle-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 11px 16px;
+            gap: 12px;
+            border-bottom: 1px solid var(--border);
+            cursor: pointer;
+            transition: background 0.12s;
+            user-select: none;
         }
 
-        .badge.always-on {
-            background-color: #444;
-            color: #ddd;
+        .toggle-row:last-child { border-bottom: none; }
+        .toggle-row:hover { background: var(--bg-hover); }
+
+        .toggle-label {
+            font-size: 13px;
+            color: var(--text);
         }
 
-        .target-pages {
-            font-size: 10px;
-            color: var(--accent-orange);
-            font-family: monospace;
-            margin-bottom: 8px;
-            display: block;
+        /* ── Switch ── */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 38px;
+            height: 21px;
+            flex-shrink: 0;
         }
+
+        .switch input { opacity: 0; width: 0; height: 0; position: absolute; }
+
+        .slider {
+            position: absolute;
+            inset: 0;
+            background: var(--text-subtle);
+            border-radius: 21px;
+            transition: background 0.2s;
+        }
+
+        .slider::before {
+            content: '';
+            position: absolute;
+            width: 15px;
+            height: 15px;
+            left: 3px;
+            top: 3px;
+            background: #fff;
+            border-radius: 50%;
+            transition: transform 0.2s;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+        }
+
+        input:checked + .slider { background: var(--accent); }
+        input:checked + .slider::before { transform: translateX(17px); }
+        input:focus-visible + .slider { outline: 2px solid var(--accent); outline-offset: 2px; }
     </style>
 </head>
-
 <body>
     <div class="container">
-        <header>
-            <div>
-                <h1>Jaspers GC Mods Dashboard</h1>
-                <div class="subtitle">Complete runtime monitoring panel for injected core features.</div>
+
+        <div class="header">
+            <div class="header-logo">⠿</div>
+            <div class="header-text">
+                <h1>Jaspers GC Mods</h1>
+                <p>Feature dashboard · gcc.wrindustries.com</p>
             </div>
-        </header>
+            <div class="version">v1.8</div>
+        </div>
 
         <div class="grid">
-            <div class="card settings-panel">
-                <div class="card-content">
 
-                    <h3 style="color: var(--accent-orange);">Cluster Options</h3>
-                    <div class="settings-grid">
-                        <label class="toggle-control">
-                            <input type="checkbox" id="dash-hide-regular">
-                            <span>Show Regular Cluster Menu</span>
-                        </label>
-                        <label class="toggle-control">
-                            <input type="checkbox" id="dash-hide-collective">
-                            <span>Show Collective Menu</span>
-                        </label>
-                        <label class="toggle-control">
-                            <input type="checkbox" id="dash-hide-viral">
-                            <span>Show Viral Menu</span>
-                        </label>
-                    </div>
-
-
-                    <h3 style="color: var(--accent-orange); margin-top: 20px; font-size: 16px; letter-spacing: 0.5px;">
-                        Automation Macro Rules</h3>
-                    <div class="settings-grid"
-                        style="border-top: 1px solid #1a263f; padding-top: 8px; margin-top: 8px;">
-                        <label class="toggle-control">
-                            <input type="checkbox" id="dash-auto-continue">
-                            <span>Auto Click Continue</span>
-                        </label>
-                        <label class="toggle-control">
-                            <input type="checkbox" id="dash-auto-explore">
-                            <span>Auto Click Explore</span>
-                        </label>
-                    </div>
-
-
-                    <h3 style="color: var(--accent-orange); margin-top: 20px; font-size: 16px; letter-spacing: 0.5px;">
-                        Quick Infect/Assimilate Options </h3>
-                    <div class="settings-grid"
-                        style="border-top: 1px solid #1a263f; padding-top: 8px; margin-top: 8px;">
-                        <label class="toggle-control">
-                            <input type="checkbox" id="dash-assim-toggle">
-                            <span>Enable Assimilate Buttons</span>
-                        </label>
-                        <label class="toggle-control">
-                            <input type="checkbox" id="dash-infect-toggle">
-                            <span>Enable Infect Buttons</span>
-                        </label>
-                    </div>
-
-                    <h3 style="color: var(--accent-orange); margin-top: 20px; font-size: 16px; letter-spacing: 0.5px;">
-                        Ranking Options </h3>
-                    <div class="settings-grid"
-                        style="border-top: 1px solid #1a263f; padding-top: 8px; margin-top: 8px;">
-                        <label class="toggle-control">
-                            <input type="checkbox" id="dash-fed-lazy">
-                            <span>Federation Lazy Load (hover)</span>
-                        </label>
-                        <label class="toggle-control">
-                            <input type="checkbox" id="dash-fed-full">
-                            <span>Federation Full Load</span>
-                        </label>
-                    </div>
-
-                    <h3 style="color: var(--accent-orange); margin-top: 20px; font-size: 16px; letter-spacing: 0.5px;">
-                        Extra Link Options</h3>
-                    <div class="settings-grid"
-                        style="border-top: 1px solid #1a263f; padding-top: 8px; margin-top: 8px;">
-                        <label class="toggle-control">
-                            <input type="checkbox" id="dash-sims-toggle">
-                            <span>Enable Simulations Links</span>
-                        </label>
-                    </div>
-
-                    <h3 style="color: var(--accent-orange); margin-top: 20px; font-size: 16px; letter-spacing: 0.5px;">
-                        Chat Options</h3>
-                    <div class="settings-grid"
-                        style="border-top: 1px solid #1a263f; padding-top: 8px; margin-top: 8px;">
-                        <label class="toggle-control">
-                            <input type="checkbox" id="dash-chat-toggle">
-                            <span>Enable Chat Features</span>
-                        </label>
-                    </div>
-
-                    <h3 style="color: var(--accent-orange); margin-top: 20px; font-size: 16px; letter-spacing: 0.5px;">
-                        Build Ship Options</h3>
-                    <div class="settings-grid"
-                        style="border-top: 1px solid #1a263f; padding-top: 8px; margin-top: 8px;">
-                    </div>
-                    <label class="toggle-control">
-                        <input type="checkbox" id="dash-batch-toggle">
-                        <span>Enable Ship Batch Buttons</span>
-                    </label>
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon">🏗</div>
+                    <span class="card-title">Cluster</span>
                 </div>
+                <label class="toggle-row">
+                    <span class="toggle-label">Regular Cluster</span>
+                    <label class="switch"><input type="checkbox" id="dash-hide-regular"><span class="slider"></span></label>
+                </label>
+                <label class="toggle-row">
+                    <span class="toggle-label">Collective Menu</span>
+                    <label class="switch"><input type="checkbox" id="dash-hide-collective"><span class="slider"></span></label>
+                </label>
+                <label class="toggle-row">
+                    <span class="toggle-label">Viral Menu</span>
+                    <label class="switch"><input type="checkbox" id="dash-hide-viral"><span class="slider"></span></label>
+                </label>
             </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon">⚡</div>
+                    <span class="card-title">Automation</span>
+                </div>
+                <label class="toggle-row">
+                    <span class="toggle-label">Auto Continue</span>
+                    <label class="switch"><input type="checkbox" id="dash-auto-continue"><span class="slider"></span></label>
+                </label>
+                <label class="toggle-row">
+                    <span class="toggle-label">Auto Explore</span>
+                    <label class="switch"><input type="checkbox" id="dash-auto-explore"><span class="slider"></span></label>
+                </label>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon">🌍</div>
+                    <span class="card-title">Colony</span>
+                </div>
+                <label class="toggle-row">
+                    <span class="toggle-label">Assimilate Buttons</span>
+                    <label class="switch"><input type="checkbox" id="dash-assim-toggle"><span class="slider"></span></label>
+                </label>
+                <label class="toggle-row">
+                    <span class="toggle-label">Infect Buttons</span>
+                    <label class="switch"><input type="checkbox" id="dash-infect-toggle"><span class="slider"></span></label>
+                </label>
+                <label class="toggle-row">
+                    <span class="toggle-label">Quick Build</span>
+                    <label class="switch"><input type="checkbox" id="dash-quick-build"><span class="slider"></span></label>
+                </label>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon">📊</div>
+                    <span class="card-title">Ranking</span>
+                </div>
+                <label class="toggle-row">
+                    <span class="toggle-label">Federation Lazy Load</span>
+                    <label class="switch"><input type="checkbox" id="dash-fed-lazy"><span class="slider"></span></label>
+                </label>
+                <label class="toggle-row">
+                    <span class="toggle-label">Federation Full Load</span>
+                    <label class="switch"><input type="checkbox" id="dash-fed-full"><span class="slider"></span></label>
+                </label>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon">💬</div>
+                    <span class="card-title">UI & Chat</span>
+                </div>
+                <label class="toggle-row">
+                    <span class="toggle-label">Simulations Links</span>
+                    <label class="switch"><input type="checkbox" id="dash-sims-toggle"><span class="slider"></span></label>
+                </label>
+                <label class="toggle-row">
+                    <span class="toggle-label">Chat Features</span>
+                    <label class="switch"><input type="checkbox" id="dash-chat-toggle"><span class="slider"></span></label>
+                </label>
+                <label class="toggle-row">
+                    <span class="toggle-label">Ship Batch Buttons</span>
+                    <label class="switch"><input type="checkbox" id="dash-batch-toggle"><span class="slider"></span></label>
+                </label>
+            </div>
+
         </div>
     </div>
     <script src="dashboard.js"></script>
 </body>
-
 </html>
