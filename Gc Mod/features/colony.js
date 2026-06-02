@@ -4,10 +4,9 @@ function addAssimilateButtons(sid) {
 
     const headerRow = table.querySelector('thead tr');
     if (headerRow && !headerRow.querySelector('.gcc-assim-header')) {
-        const th = document.createElement('td');
-        th.className = 'gcc-assim-header';
+        const th = document.createElement('th');
+        th.className = 'gc-colony-modern-table__metric gcc-assim-header';
         th.textContent = 'Assimilate';
-        th.style.cssText = 'font-weight:bold; white-space:nowrap;';
         headerRow.appendChild(th);
     }
 
@@ -23,13 +22,13 @@ function addAssimilateButtons(sid) {
         const cid = match[1];
 
         const td = document.createElement('td');
-        td.style.textAlign = 'center';
+        td.className = 'gc-colony-modern-table__metric';
 
-        const btn = document.createElement('button');
-        btn.textContent = '✔';
-        btn.style.cssText = 'background:#c0392b; color:white; border:none; padding:4px 10px; border-radius:4px; cursor:pointer; font-size:11px; font-weight:700;';
-        btn.addEventListener('mouseenter', () => btn.style.background = '#e74c3c');
-        btn.addEventListener('mouseleave', () => btn.style.background = '#c0392b');
+        const btn = document.createElement('input');
+        btn.type = 'button';
+        btn.value = '✔';
+        btn.className = 'gc-colony-detail-modern__action gc-colony-detail-modern__action--submit';
+        btn.style.cssText = 'font-family:var(--font-mono);font-size:9.5px;font-weight:700;letter-spacing:0.14em;padding:0 12px;';
 
         btn.addEventListener('click', () => {
             if (!sid) return alert('SID not found. Click Cmd to sync first.');
@@ -48,10 +47,9 @@ function addInfectButtons(sid) {
 
     const headerRow = table.querySelector('thead tr');
     if (headerRow && !headerRow.querySelector('.gcc-infect-header')) {
-        const th = document.createElement('td');
-        th.className = 'gcc-infect-header';
+        const th = document.createElement('th');
+        th.className = 'gc-colony-modern-table__metric gcc-infect-header';
         th.textContent = 'Infect';
-        th.style.cssText = 'font-weight:bold; white-space:nowrap;';
         headerRow.appendChild(th);
     }
 
@@ -67,13 +65,13 @@ function addInfectButtons(sid) {
         const cid = match[1];
 
         const td = document.createElement('td');
-        td.style.textAlign = 'center';
+        td.className = 'gc-colony-modern-table__metric';
 
-        const btn = document.createElement('button');
-        btn.textContent = '✔';
-        btn.style.cssText = 'background:#c0392b; color:white; border:none; padding:4px 10px; border-radius:4px; cursor:pointer; font-size:11px; font-weight:700;';
-        btn.addEventListener('mouseenter', () => btn.style.background = '#e74c3c');
-        btn.addEventListener('mouseleave', () => btn.style.background = '#c0392b');
+        const btn = document.createElement('input');
+        btn.type = 'button';
+        btn.value = '✔';
+        btn.className = 'gc-colony-detail-modern__action gc-colony-detail-modern__action--submit';
+        btn.style.cssText = 'font-family:var(--font-mono);font-size:9.5px;font-weight:700;letter-spacing:0.14em;padding:0 12px;';
 
         btn.addEventListener('click', () => {
             if (!sid) return alert('SID not found. Click Cmd to sync first.');
