@@ -261,13 +261,13 @@ function setupLogic(container, presets, sid, assimEnabled, infectEnabled, cluste
     setTimeout(addImportantEventsLink, 1000);
 
     if (assimEnabled) {
-        observeUntil('table.gc-colony-list-table', () => addAssimilateButtons(sid));
+        observeUntil('table.gc-colony-modern-table', () => addAssimilateButtons(sid));
     }
     if (infectEnabled) {
-        observeUntil('table.gc-colony-list-table', () => addInfectButtons(sid));
+        observeUntil('table.gc-colony-modern-table', () => addInfectButtons(sid));
     }
     if (quickBuildEnabledState) {
-        observeUntil('table.gc-colony-list-table', attachQuickBuild);
+        observeUntil('table.gc-colony-modern-table', attachQuickBuild);
     }
     if (battleLogsEnabledState) {
         observeUntil('table.gc-battle-prev-table', attachBattleLogs);

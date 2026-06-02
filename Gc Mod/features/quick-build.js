@@ -1,5 +1,5 @@
 function attachQuickBuild() {
-    const table = document.querySelector('table.gc-colony-list-table');
+    const table = document.querySelector('table.gc-colony-modern-table');
     if (!table || table.dataset.gccQuickBuildAttached) return;
     table.dataset.gccQuickBuildAttached = '1';
 
@@ -59,57 +59,43 @@ function attachQuickBuild() {
 }
 
 async function loadColonyQuickBuild(colid, td) {
-    const fetchUrl   = sid ? `i.cfm?&${sid}&f=com_col&colid=${colid}`         : `i.cfm?f=com_col&colid=${colid}`;
-    const plunderUrl = sid ? `i.cfm?&${sid}&f=com_col_plunder&cid=${colid}`   : `i.cfm?f=com_col_plunder&cid=${colid}`;
+    const fetchUrl = sid ? `i.cfm?&${sid}&f=com_col&colid=${colid}` : `i.cfm?f=com_col&colid=${colid}`;
 
     try {
-        const [res, plunderRes] = await Promise.all([
-            fetch(fetchUrl,   { credentials: 'same-origin' }),
-            fetch(plunderUrl, { credentials: 'same-origin' })
-        ]);
+        const res = await fetch(fetchUrl, { credentials: 'same-origin' });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
         const doc = new DOMParser().parseFromString(await res.text(), 'text/html');
-        const constructionTable = doc.querySelector('table.gc-colony-detail-table--form');
-        const actionsTable      = doc.querySelector('table.gc-colony-detail-table--actions');
-        const kvTables          = Array.from(doc.querySelectorAll('table.gc-colony-detail-table--kv'));
+        const constructionForm = doc.querySelector('form.gc-colony-detail-modern__form');
+        const directivesPanel  = doc.querySelector('.gc-colony-detail-modern__panel--orders');
+        const statusPanel      = doc.querySelector('section.gc-colony-detail-modern__panel--status');
+        const empirePanel      = doc.querySelector('section.gc-colony-detail-modern__panel--empire');
 
-        if (!constructionTable && !kvTables.length) {
+        if (!constructionForm && !statusPanel && !empirePanel) {
             td.innerHTML = '<div style="color:#f44336;padding:12px;">Could not load colony data.</div>';
             return;
-        }
-
-        // Parse plunder page
-        let plunderP = null, plunderBtn = null;
-        if (plunderRes.ok) {
-            const plunderDoc = new DOMParser().parseFromString(await plunderRes.text(), 'text/html');
-            plunderP   = plunderDoc.querySelector('p.smallfont');
-            plunderBtn = plunderDoc.querySelector('input[type="button"][value*="Plunder"]');
         }
 
         const panel = document.createElement('div');
         panel.className = 'gcc-qb-panel';
 
-        // ── Left column: construction form → actions → plunder ──
+        // ── Left column: construction form → directives ──
         const leftCol = document.createElement('div');
         leftCol.style.cssText = 'flex:1 1 300px;min-width:280px;display:flex;flex-direction:column;gap:10px;';
 
         const statusDiv = document.createElement('div');
         statusDiv.className = 'gcc-qb-status';
 
-        if (constructionTable) {
-            const form = document.createElement('form');
-            form.method = 'POST';
+        if (constructionForm) {
+            const form = constructionForm.cloneNode(true);
             form.action = fetchUrl;
-            form.appendChild(constructionTable.cloneNode(true));
 
-            form.querySelectorAll('input[type="button"]').forEach(btn => {
-                if (/done/i.test(btn.value)) {
-                    btn.removeAttribute('onclick');
-                    btn.addEventListener('click', () => {
-                        window.location.href = sid ? `i.cfm?&${sid}&f=com_col` : `i.cfm?f=com_col`;
-                    });
-                }
+            // Fix Done link to navigate back to colony list
+            form.querySelectorAll('a.gc-colony-detail-modern__action--done').forEach(a => {
+                a.href = 'javascript:void(0)';
+                a.addEventListener('click', () => {
+                    window.location.href = sid ? `i.cfm?&${sid}&f=com_col` : `i.cfm?f=com_col`;
+                });
             });
 
             let clickedBtn = null;
@@ -151,40 +137,19 @@ async function loadColonyQuickBuild(colid, td) {
             leftCol.appendChild(form);
         }
 
-        if (actionsTable) {
-            leftCol.appendChild(actionsTable.cloneNode(true));
-        }
-
-        if (plunderP || plunderBtn) {
-            const plunderDiv = document.createElement('div');
-            plunderDiv.style.cssText = 'background:#192035;border:1px solid #3a4d75;border-radius:6px;padding:10px;text-align:center;';
-
-            if (plunderP) plunderDiv.appendChild(plunderP.cloneNode(true));
-
-            if (plunderBtn) {
-                const btn = plunderBtn.cloneNode(true);
-                btn.removeAttribute('onclick');
-                btn.addEventListener('click', () => {
-                    if (confirm('Confirm plunder this colony?')) {
-                        window.location.href = sid
-                            ? `i.cfm?&${sid}&f=com_col_plunder&cid=${colid}&co=1`
-                            : `i.cfm?f=com_col_plunder&cid=${colid}&co=1`;
-                    }
-                });
-                plunderDiv.appendChild(btn);
-            }
-
-            leftCol.appendChild(plunderDiv);
+        if (directivesPanel) {
+            leftCol.appendChild(directivesPanel.cloneNode(true));
         }
 
         leftCol.appendChild(statusDiv);
         panel.appendChild(leftCol);
 
-        // ── Right column: kv tables (population, empire info) ──
-        if (kvTables.length) {
+        // ── Right column: planet profile + treasury ──
+        if (statusPanel || empirePanel) {
             const kvDiv = document.createElement('div');
-            kvDiv.style.cssText = 'flex:0 1 220px;min-width:200px;display:flex;flex-direction:column;gap:8px;';
-            kvTables.forEach(t => kvDiv.appendChild(t.cloneNode(true)));
+            kvDiv.style.cssText = 'flex:0 1 260px;min-width:220px;display:flex;flex-direction:column;gap:8px;';
+            if (statusPanel) kvDiv.appendChild(statusPanel.cloneNode(true));
+            if (empirePanel) kvDiv.appendChild(empirePanel.cloneNode(true));
             panel.appendChild(kvDiv);
         }
 

@@ -1,8 +1,8 @@
 function addAssimilateButtons(sid) {
-    const table = document.querySelector('table.gc-colony-list-table');
+    const table = document.querySelector('table.gc-colony-modern-table');
     if (!table) return;
 
-    const headerRow = table.querySelector('thead tr.Header');
+    const headerRow = table.querySelector('thead tr');
     if (headerRow && !headerRow.querySelector('.gcc-assim-header')) {
         const th = document.createElement('td');
         th.className = 'gcc-assim-header';
@@ -43,10 +43,10 @@ function addAssimilateButtons(sid) {
 }
 
 function addInfectButtons(sid) {
-    const table = document.querySelector('table.gc-colony-list-table');
+    const table = document.querySelector('table.gc-colony-modern-table');
     if (!table) return;
 
-    const headerRow = table.querySelector('thead tr.Header');
+    const headerRow = table.querySelector('thead tr');
     if (headerRow && !headerRow.querySelector('.gcc-infect-header')) {
         const th = document.createElement('td');
         th.className = 'gcc-infect-header';
