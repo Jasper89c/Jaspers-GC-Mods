@@ -1,3 +1,6 @@
+check out this GC mini game : https://jasper89c.itch.io/galactic-conquest-mini-game
+
+
 # GC Helper Tool
 
 A small userscript / content script for the GC mod site that adds helper UI, quick actions, and live ship stats.
