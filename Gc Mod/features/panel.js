@@ -1,6 +1,6 @@
 chrome.storage.local.get(['panelPos', 'presets', 'storedSid', 'assimEnabled', 'infectEnabled',
      'clusterCollapsed', 'similareCollapsed', 'viralCollapsed', 'fedLazy', 'fedFull',
-      'clusterMineral', 'simsLinksEnabled', 'chatFeatureEnabled', 'batchButtonsEnabled', 'quickBuildEnabled', 'battleLogsEnabled'], (res) => {
+      'clusterMineral', 'simsLinksEnabled', 'importantEventsLinkEnabled', 'chatFeatureEnabled', 'batchButtonsEnabled', 'quickBuildEnabled', 'battleLogsEnabled'], (res) => {
     const pos = res.panelPos || { top: '20px', left: 'auto', right: '20px' };
     const savedPresets = res.presets || {};
 
@@ -8,7 +8,8 @@ chrome.storage.local.get(['panelPos', 'presets', 'storedSid', 'assimEnabled', 'i
     sid = sidMatch ? sidMatch[1] : res.storedSid;
     if (sid) chrome.storage.local.set({ storedSid: sid });
 
-    const simsLinksEnabledState = (res.simsLinksEnabled !== false);
+    const simsLinksEnabledState          = (res.simsLinksEnabled !== false);
+    const importantEventsLinkEnabledState = (res.importantEventsLinkEnabled !== false);
     chatFeatureEnabledState = (res.chatFeatureEnabled !== false);
     batchButtonsEnabledState = (res.batchButtonsEnabled !== false);
     quickBuildEnabledState = (res.quickBuildEnabled !== false);
@@ -136,7 +137,7 @@ chrome.storage.local.get(['panelPos', 'presets', 'storedSid', 'assimEnabled', 'i
     }
     document.body.appendChild(container);
 
-    setupLogic(container, savedPresets, sid, !!res.assimEnabled, !!res.infectEnabled, !!res.clusterCollapsed, !!res.similareCollapsed, !!res.viralCollapsed, !!res.fedLazy, !!res.fedFull, simsLinksEnabledState);
+    setupLogic(container, savedPresets, sid, !!res.assimEnabled, !!res.infectEnabled, !!res.clusterCollapsed, !!res.similareCollapsed, !!res.viralCollapsed, !!res.fedLazy, !!res.fedFull, simsLinksEnabledState, importantEventsLinkEnabledState);
 
     renderEmbeddedBottomChat();
 });
@@ -151,7 +152,7 @@ function observeUntil(selector, callback, timeout = 5000) {
 }
 
 function setupLogic(container, presets, sid, assimEnabled, infectEnabled, clusterCollapsed,
-    similareCollapsed, viralCollapsed, fedLazy, fedFull, simsLinksEnabledState) {
+    similareCollapsed, viralCollapsed, fedLazy, fedFull, simsLinksEnabledState, importantEventsLinkEnabledState) {
     document.getElementById('gcc-refresh-btn').onclick = () => window.location.reload();
 
     checkForUpdates();
@@ -274,8 +275,10 @@ function setupLogic(container, presets, sid, assimEnabled, infectEnabled, cluste
             setTimeout(addSimulationsLinks, 500);
         } catch (e) { }
     }
-    addImportantEventsLink();
-    setTimeout(addImportantEventsLink, 1000);
+    if (importantEventsLinkEnabledState) {
+        addImportantEventsLink();
+        setTimeout(addImportantEventsLink, 1000);
+    }
 
     if (assimEnabled) {
         observeUntil('table.gc-colony-modern-table', () => addAssimilateButtons(sid));

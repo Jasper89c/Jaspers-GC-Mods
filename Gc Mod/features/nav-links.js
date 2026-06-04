@@ -23,6 +23,9 @@ function addImportantEventsLink() {
     }
 
     console.log('[GC Helper] Important Events link inserted');
+
+    const resourceBarBtn = document.querySelector('a.gc-action--primary[aria-label="Important Events"]');
+    if (resourceBarBtn) resourceBarBtn.remove();
 }
 
 function addSimulationsLinks() {

@@ -3,8 +3,8 @@ document.addEventListener('DOMContentLoaded', () => {
     chrome.storage.local.get([
         'assimEnabled', 'infectEnabled', 'fedLazy', 'fedFull',
         'clusterCollapsed', 'similareCollapsed', 'viralCollapsed', 'autoContinue',
-        'autoExplore', 'simsLinksEnabled', 'chatFeatureEnabled', 'batchButtonsEnabled',
-        'quickBuildEnabled', 'battleLogsEnabled', 'marketQuickFillEnabled'
+        'autoExplore', 'simsLinksEnabled', 'importantEventsLinkEnabled', 'chatFeatureEnabled',
+        'batchButtonsEnabled', 'quickBuildEnabled', 'battleLogsEnabled', 'marketQuickFillEnabled'
     ], (res) => {
 
         // 1. Assimilate Status Card Badge
@@ -142,11 +142,17 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
         // --- SIMULATIONS LINKS AUTOMATION HANDLE ---
+        const eventsLinkCheck = document.getElementById('dash-events-toggle');
+        if (eventsLinkCheck) {
+            eventsLinkCheck.checked = (res.importantEventsLinkEnabled !== false);
+            eventsLinkCheck.addEventListener('change', () => {
+                chrome.storage.local.set({ importantEventsLinkEnabled: eventsLinkCheck.checked });
+            });
+        }
+
         const simsLinksCheck = document.getElementById('dash-sims-toggle');
         if (simsLinksCheck) {
-            // Check the box if simsLinksEnabled is true (Defaulting to true if undefined)
             simsLinksCheck.checked = (res.simsLinksEnabled !== false);
-
             simsLinksCheck.addEventListener('change', () => {
                 chrome.storage.local.set({ simsLinksEnabled: simsLinksCheck.checked });
             });

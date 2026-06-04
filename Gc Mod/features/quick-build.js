@@ -66,7 +66,13 @@ async function loadColonyQuickBuild(colid, td) {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
         const doc = new DOMParser().parseFromString(await res.text(), 'text/html');
-        const constructionForm = doc.querySelector('form.gc-colony-detail-modern__form');
+        const buildSection     = doc.querySelector('section.gc-colony-detail-modern__panel--build');
+        const constructionForm = buildSection
+            ? buildSection.querySelector('form.gc-colony-detail-modern__form')
+            : doc.querySelector('form.gc-colony-detail-modern__form');
+        const buildPanelHead   = buildSection
+            ? buildSection.querySelector('.gc-colony-detail-modern__panel-head')
+            : null;
         const directivesPanel  = doc.querySelector('.gc-colony-detail-modern__panel--orders');
         const statusPanel      = doc.querySelector('section.gc-colony-detail-modern__panel--status');
         const empirePanel      = doc.querySelector('section.gc-colony-detail-modern__panel--empire');
@@ -86,9 +92,22 @@ async function loadColonyQuickBuild(colid, td) {
         const statusDiv = document.createElement('div');
         statusDiv.className = 'gcc-qb-status';
 
+        if (buildPanelHead) {
+            leftCol.appendChild(buildPanelHead.cloneNode(true));
+        }
+
         if (constructionForm) {
             const form = constructionForm.cloneNode(true);
             form.action = fetchUrl;
+
+            // Wire Max buttons — set input to available free land
+            const freeLand = parseInt(form.dataset.freeLand || '0');
+            form.querySelectorAll('button.gc-colony-detail-modern__max-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const input = form.querySelector(`input[name="${btn.dataset.target}"]`);
+                    if (input) input.value = freeLand;
+                });
+            });
 
             // Fix Done link to navigate back to colony list
             form.querySelectorAll('a.gc-colony-detail-modern__action--done').forEach(a => {

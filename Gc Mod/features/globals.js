@@ -3,6 +3,7 @@ let sid = null;
 let autoContinueEnabled = true;
 let autoExploreEnabled = true;
 let simsLinksEnabled = true;
+let importantEventsLinkEnabled = true;
 let batchButtonsEnabledState = true;
 let chatFeatureEnabledState = true;
 let quickBuildEnabledState = true;
@@ -26,6 +27,11 @@ chrome.storage.onChanged.addListener((changes, namespace) => {
         } else {
             window.location.reload();
         }
+    }
+
+    if (changes.importantEventsLinkEnabled) {
+        importantEventsLinkEnabled = changes.importantEventsLinkEnabled.newValue;
+        window.location.reload();
     }
 
     if (changes.quickBuildEnabled) {
