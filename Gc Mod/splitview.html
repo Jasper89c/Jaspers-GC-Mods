@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>GC Split View</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body { width: 100%; height: 100%; overflow: hidden; background: #0d1117; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+
+        #sv-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 0 14px;
+            background: #161b22;
+            border-bottom: 1px solid rgba(255,255,255,0.07);
+            height: 38px;
+            flex-shrink: 0;
+        }
+
+        .sv-title {
+            font-size: 12px;
+            font-weight: 700;
+            color: #ff9800;
+            letter-spacing: 0.3px;
+        }
+
+        #sv-back {
+            font-size: 11px;
+            color: #7d8590;
+            padding: 3px 9px;
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 5px;
+            font-family: inherit;
+            cursor: pointer;
+            background: transparent;
+            transition: color 0.12s, border-color 0.12s;
+        }
+        #sv-back:hover { color: #e6edf3; border-color: rgba(255,255,255,0.22); }
+
+        #sv-info {
+            margin-left: auto;
+            font-size: 11px;
+            color: #3d444d;
+        }
+
+        #sv-container {
+            width: 100%;
+            height: calc(100vh - 38px);
+            display: grid;
+        }
+
+        .sv-pane {
+            position: relative;
+            overflow: hidden;
+            background: #0a0d13;
+            border: 1px solid rgba(255,255,255,0.04);
+        }
+
+        .sv-pane iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            border: none;
+            display: block;
+            transform-origin: 0 0;
+        }
+
+        .sv-pane-tag {
+            position: absolute;
+            top: 5px;
+            left: 7px;
+            background: rgba(13,17,23,0.88);
+            color: #7d8590;
+            font-size: 10px;
+            font-family: ui-monospace, 'SF Mono', Consolas, monospace;
+            padding: 2px 7px;
+            border-radius: 3px;
+            pointer-events: none;
+            z-index: 10;
+            white-space: nowrap;
+        }
+
+        .sv-pane-empty {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #3d444d;
+            font-family: ui-monospace, monospace;
+            font-size: 13px;
+        }
+
+        .sv-pane-reload {
+            position: absolute;
+            top: 5px;
+            right: 7px;
+            z-index: 10;
+            background: rgba(13,17,23,0.88);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 4px;
+            color: #7d8590;
+            font-size: 13px;
+            line-height: 1;
+            padding: 2px 6px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: color 0.12s, border-color 0.12s;
+        }
+        .sv-pane-reload:hover { color: #ff9800; border-color: rgba(255,152,0,0.4); }
+    </style>
+</head>
+<body>
+    <div id="sv-toolbar">
+        <span class="sv-title">⠿ GC Split View</span>
+        <button id="sv-back">← Settings</button>
+        <span id="sv-info"></span>
+    </div>
+    <div id="sv-container"></div>
+    <script src="splitview.js"></script>
+</body>
+</html>

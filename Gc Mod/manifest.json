@@ -1,11 +1,21 @@
 {
   "manifest_version": 3,
   "name": "Jaspers GC Mods",
-  "version": "2.3",
+  "version": "2.4",
   "permissions": [
     "storage",
-    "webRequest"
+    "webRequest",
+    "declarativeNetRequest"
   ],
+  "declarative_net_request": {
+    "rule_resources": [
+      {
+        "id": "splitview_framing",
+        "enabled": true,
+        "path": "rules.json"
+      }
+    ]
+  },
   "host_permissions": [
     "https://api.github.com/*",
     "*://gcc.wrindustries.com/*"
@@ -27,6 +37,7 @@
         "features/ship-tooltips.js",
         "features/disband.js",
         "features/colony.js",
+        "features/market.js",
         "features/updates.js",
         "features/chat.js",
         "features/quick-build.js",
@@ -42,7 +53,9 @@
     {
       "resources": [
         "dashboard.html",
-        "dashboard.js"
+        "dashboard.js",
+        "splitview.html",
+        "splitview.js"
       ],
       "matches": [
         "https://gcc.wrindustries.com/*"

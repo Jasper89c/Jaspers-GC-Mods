@@ -96,11 +96,9 @@ async function refreshFedFeedFromServer(container) {
             const html = await res.text();
             const doc = new DOMParser().parseFromString(html, 'text/html');
 
-            const allRows = doc.querySelectorAll('table.Default tr');
-            const rows = Array.from(allRows).filter(row => {
-                const firstTd = row.querySelector('td');
-                return firstTd && firstTd.getAttribute('width') === '1%' && row.querySelectorAll('td').length >= 2;
-            });
+            const rows = Array.from(doc.querySelectorAll('table.gc-fed-forum-list tr')).filter(row =>
+                row.querySelector('td.gc-fed-forum-list__meta')
+            );
 
             container.innerHTML = '';
 
@@ -110,16 +108,13 @@ async function refreshFedFeedFromServer(container) {
             }
 
             Array.from(rows).reverse().forEach(row => {
-                const cells = row.querySelectorAll('td');
-                if (cells.length >= 2) {
-                    const userCell = cells[0];
-                    const bodyCell = cells[1];
+                const userCell = row.querySelector('td.gc-fed-forum-list__meta');
+                const bodyCell = row.querySelector('td.gc-fed-forum-list__body');
+                if (!userCell || !bodyCell) return;
 
                     let username = "Unknown";
-                    const nameMatch = userCell.innerHTML.match(/^([^<]+)</);
-                    if (nameMatch) {
-                        username = nameMatch[1].trim();
-                    }
+                    const userEl = userCell.querySelector('span.gc-fed-forum-list__user');
+                    if (userEl) username = userEl.textContent.trim();
 
                     let timestamp = "";
                     const fontEl = userCell.querySelector('font[color="gray"]');
@@ -147,7 +142,6 @@ async function refreshFedFeedFromServer(container) {
                         <div class="custom-chat-body-text" style="margin-top:2px;">${bodyHtml}</div>
                     `;
                     container.appendChild(chatLine);
-                }
             });
 
             container.scrollTop = container.scrollHeight;
@@ -158,6 +152,7 @@ async function refreshFedFeedFromServer(container) {
 }
 
 function renderEmbeddedBottomChat() {
+    if (window.top !== window.self) return;
     if (chatFeatureEnabledState === false) {
         const existingCustomChat = document.querySelector('.custom-bottom-chat-panel');
         if (existingCustomChat) existingCustomChat.remove();

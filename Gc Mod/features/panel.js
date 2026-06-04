@@ -117,6 +117,23 @@ chrome.storage.local.get(['panelPos', 'presets', 'storedSid', 'assimEnabled', 'i
 
         <a href="#" id="lnk-dashboard" class="gcc-footer-link">Dashboard</a>
     `;
+    if (window.top !== window.self) {
+        if (typeof attachShipHoverTooltips === 'function') attachShipHoverTooltips();
+        if (batchButtonsEnabledState && window.location.href.includes('f=com_ship')) {
+            try { addShipBuilderBatchButtons(); setInterval(addShipBuilderBatchButtons, 1500); } catch(e) {}
+        }
+        if (window.location.href.includes('f=com_disband')) { observeUntil('table.Default', addDisbandQuickCells); }
+        if (simsLinksEnabledState !== false) { try { addSimulationsLinks(); setTimeout(addSimulationsLinks, 500); } catch(e) {} }
+        addImportantEventsLink(); setTimeout(addImportantEventsLink, 1000);
+        if (res.assimEnabled) { observeUntil('table.gc-colony-modern-table', () => addAssimilateButtons(sid)); }
+        if (res.infectEnabled) { observeUntil('table.gc-colony-modern-table', () => addInfectButtons(sid)); }
+        if (quickBuildEnabledState) { observeUntil('table.gc-colony-modern-table', attachQuickBuild); }
+        if (battleLogsEnabledState) { observeUntil('table.gc-battle-prev-table', attachBattleLogs); }
+        if (res.fedLazy) { try { attachFedLazy(sid); } catch(e){} }
+        if (res.fedFull) { try { attachFedFull(sid); } catch(e){} }
+        addMarketQuickFill();
+        return;
+    }
     document.body.appendChild(container);
 
     setupLogic(container, savedPresets, sid, !!res.assimEnabled, !!res.infectEnabled, !!res.clusterCollapsed, !!res.similareCollapsed, !!res.viralCollapsed, !!res.fedLazy, !!res.fedFull, simsLinksEnabledState);
@@ -276,6 +293,7 @@ function setupLogic(container, presets, sid, assimEnabled, infectEnabled, cluste
     // Federation live load
     if (fedLazy) { try { attachFedLazy(sid); } catch(e){} }
     if (fedFull) { try { attachFedFull(sid); } catch(e){} }
+    addMarketQuickFill();
 
     // Cluster section visibility
     const applyVisibility = (wrapperId, isHiddenFromDashboard) => {
