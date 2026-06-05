@@ -184,6 +184,25 @@
         /* ── Split View card ── */
         .card--wide { grid-column: 1 / -1; }
 
+        /* ── Collapsible cards ── */
+        .card-header {
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .card-header::after {
+            content: '▾';
+            margin-left: auto;
+            font-size: 11px;
+            color: var(--text-muted);
+            transition: transform 0.18s;
+            flex-shrink: 0;
+        }
+
+        .card.collapsed .card-header::after {
+            transform: rotate(-90deg);
+        }
+
         .sv-row {
             display: flex;
             align-items: center;
@@ -303,6 +322,115 @@
             transition: background 0.12s, border-color 0.12s;
         }
         .sv-open-btn:hover { background: rgba(255,152,0,0.22); border-color: var(--accent); }
+
+        /* ── Theme editor ── */
+        .theme-group-label {
+            font-size: 9px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.9px;
+            color: var(--text-subtle);
+            padding: 8px 16px 4px;
+        }
+
+        .theme-swatch-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 7px 16px;
+            border-bottom: 1px solid var(--border);
+            gap: 12px;
+        }
+
+        .theme-swatch-row:last-of-type { border-bottom: none; }
+
+        .theme-swatch-label {
+            font-size: 12px;
+            color: var(--text);
+            flex: 1;
+        }
+
+        .theme-swatch-label code {
+            display: block;
+            font-size: 10px;
+            color: var(--text-muted);
+            font-family: monospace;
+            margin-top: 1px;
+        }
+
+        .theme-swatch-row input[type="color"] {
+            width: 36px;
+            height: 26px;
+            border: 1px solid var(--border);
+            border-radius: 5px;
+            cursor: pointer;
+            padding: 2px;
+            background: var(--bg);
+            flex-shrink: 0;
+        }
+
+        .theme-reset-row {
+            display: flex;
+            justify-content: flex-end;
+            padding: 10px 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .theme-reset-btn {
+            padding: 5px 14px;
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 6px;
+            color: var(--text-muted);
+            font-size: 11px;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.12s;
+        }
+        .theme-reset-btn:hover { border-color: rgba(255,255,255,0.2); color: var(--text); }
+
+        .theme-presets-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding: 10px 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .theme-preset-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            padding: 8px 10px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.4px;
+            color: var(--text-muted);
+            font-family: inherit;
+            text-transform: uppercase;
+            transition: border-color 0.12s, color 0.12s;
+            flex: 1;
+            min-width: 90px;
+        }
+
+        .theme-preset-btn:hover { border-color: var(--accent-border); color: var(--text); }
+
+        .theme-preset-swatches {
+            display: flex;
+            gap: 3px;
+        }
+
+        .theme-preset-swatch {
+            width: 16px;
+            height: 16px;
+            border-radius: 3px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
     </style>
 </head>
 <body>
@@ -314,7 +442,7 @@
                 <h1>Jaspers GC Mods</h1>
                 <p>Feature dashboard · gcc.wrindustries.com</p>
             </div>
-            <div class="version">v1.8</div>
+            <div class="version">v2.7</div>
         </div>
 
         <div class="grid">
@@ -423,6 +551,44 @@
                     <span class="toggle-label">Quick Fill &amp; Auto Trade</span>
                     <label class="switch"><input type="checkbox" id="dash-market-quickfill"><span class="slider"></span></label>
                 </label>
+            </div>
+
+            <div class="card card--wide" id="theme-card">
+                <div class="card-header">
+                    <div class="card-icon">🎨</div>
+                    <span class="card-title">Custom Theme</span>
+                </div>
+                <label class="toggle-row">
+                    <span class="toggle-label">Enable Custom Theme</span>
+                    <label class="switch"><input type="checkbox" id="dash-theme-enabled"><span class="slider"></span></label>
+                </label>
+
+                <div id="theme-editor">
+                    <div class="theme-group-label">Presets</div>
+                    <div class="theme-presets-row" id="theme-presets-row"></div>
+
+                    <div class="theme-group-label">Backgrounds</div>
+                    <div class="theme-swatch-row"><span class="theme-swatch-label">Page BG<code>--bg-base</code></span><input type="color" id="tc--bg-base"></div>
+                    <div class="theme-swatch-row"><span class="theme-swatch-label">Surface<code>--bg-surface</code></span><input type="color" id="tc--bg-surface"></div>
+                    <div class="theme-swatch-row"><span class="theme-swatch-label">Elevated<code>--bg-elevated</code></span><input type="color" id="tc--bg-elevated"></div>
+
+                    <div class="theme-group-label">Text</div>
+                    <div class="theme-swatch-row"><span class="theme-swatch-label">Primary<code>--text-primary</code></span><input type="color" id="tc--text-primary"></div>
+                    <div class="theme-swatch-row"><span class="theme-swatch-label">Muted<code>--text-muted</code></span><input type="color" id="tc--text-muted"></div>
+
+                    <div class="theme-group-label">Accents</div>
+                    <div class="theme-swatch-row"><span class="theme-swatch-label">Accent<code>--accent</code></span><input type="color" id="tc--accent"></div>
+                    <div class="theme-swatch-row"><span class="theme-swatch-label">Danger<code>--accent-hot</code></span><input type="color" id="tc--accent-hot"></div>
+                    <div class="theme-swatch-row"><span class="theme-swatch-label">Success<code>--accent-good</code></span><input type="color" id="tc--accent-good"></div>
+                    <div class="theme-swatch-row"><span class="theme-swatch-label">Cool<code>--accent-cool</code></span><input type="color" id="tc--accent-cool"></div>
+
+                    <div class="theme-group-label">Borders</div>
+                    <div class="theme-swatch-row"><span class="theme-swatch-label">Border<code>--border</code></span><input type="color" id="tc--border"></div>
+
+                    <div class="theme-reset-row">
+                        <button class="theme-reset-btn" id="theme-reset-btn">Reset to Nebula</button>
+                    </div>
+                </div>
             </div>
 
             <div class="card card--wide" id="sv-card">

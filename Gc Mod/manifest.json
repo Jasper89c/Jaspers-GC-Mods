@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Jaspers GC Mods",
-  "version": "2.5",
+  "version": "2.7",
   "permissions": [
     "storage",
     "webRequest",
@@ -29,6 +29,7 @@
       "matches": ["*://gcc.wrindustries.com/*"],
       "js": [
         "features/globals.js",
+        "features/themes.js",
         "features/automation.js",
         "features/cluster.js",
         "features/federation.js",

@@ -1,4 +1,32 @@
 // dashboard.js - Comprehensive live storage listener with Menu toggles
+
+// ─── Collapsible cards ────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+    const state = JSON.parse(localStorage.getItem('dash_collapsed') || '{}');
+
+    document.querySelectorAll('.card').forEach(card => {
+        const key = card.id || card.querySelector('.card-title')?.textContent?.trim();
+        if (!key) return;
+
+        const header = card.querySelector('.card-header');
+        if (!header) return;
+
+        function setCollapsed(collapsed) {
+            card.classList.toggle('collapsed', collapsed);
+            // card already has overflow:hidden — clamp to header height to collapse
+            card.style.maxHeight = collapsed ? header.offsetHeight + 'px' : '';
+        }
+
+        setCollapsed(!!state[key]);
+
+        header.addEventListener('click', () => {
+            const nowCollapsed = !card.classList.contains('collapsed');
+            setCollapsed(nowCollapsed);
+            state[key] = nowCollapsed;
+            localStorage.setItem('dash_collapsed', JSON.stringify(state));
+        });
+    });
+});
 document.addEventListener('DOMContentLoaded', () => {
     chrome.storage.local.get([
         'assimEnabled', 'infectEnabled', 'fedLazy', 'fedFull',
@@ -198,6 +226,540 @@ document.addEventListener('DOMContentLoaded', () => {
             marketQuickFillCheck.checked = (res.marketQuickFillEnabled !== false);
             marketQuickFillCheck.addEventListener('change', () => {
                 chrome.storage.local.set({ marketQuickFillEnabled: marketQuickFillCheck.checked });
+            });
+        }
+    });
+});
+
+// ─── Custom Theme ─────────────────────────────────────────────────────────────
+
+const THEME_PRESETS = [
+    {
+        name: 'Deep Space',
+        vars: {
+            '--bg-base':      '#04060f',
+            '--bg-surface':   '#0a1428',
+            '--bg-elevated':  '#102040',
+            '--text-primary': '#dceeff',
+            '--text-muted':   '#5a80aa',
+            '--accent':       '#00a8ff',
+            '--accent-hot':   '#ff4466',
+            '--accent-good':  '#00ffaa',
+            '--accent-cool':  '#00a8ff',
+            '--border':       '#1a3a60',
+        },
+    },
+    {
+        name: 'Solar Flare',
+        vars: {
+            '--bg-base':      '#0d0500',
+            '--bg-surface':   '#1c0c00',
+            '--bg-elevated':  '#2c1500',
+            '--text-primary': '#fff5e0',
+            '--text-muted':   '#a07040',
+            '--accent':       '#ff8c00',
+            '--accent-hot':   '#ff3300',
+            '--accent-good':  '#88cc44',
+            '--accent-cool':  '#ffcc00',
+            '--border':       '#4a2000',
+        },
+    },
+    {
+        name: 'Void',
+        vars: {
+            '--bg-base':      '#050010',
+            '--bg-surface':   '#0e0025',
+            '--bg-elevated':  '#180038',
+            '--text-primary': '#ecdeff',
+            '--text-muted':   '#6644aa',
+            '--accent':       '#b06aff',
+            '--accent-hot':   '#ff4488',
+            '--accent-good':  '#44ff99',
+            '--accent-cool':  '#7799ff',
+            '--border':       '#2a0a5a',
+        },
+    },
+    {
+        name: 'Aurora',
+        vars: {
+            '--bg-base':      '#000f0a',
+            '--bg-surface':   '#001f14',
+            '--bg-elevated':  '#003020',
+            '--text-primary': '#ccffee',
+            '--text-muted':   '#3a8866',
+            '--accent':       '#00ffcc',
+            '--accent-hot':   '#ff5566',
+            '--accent-good':  '#00ffcc',
+            '--accent-cool':  '#00ccff',
+            '--border':       '#005540',
+        },
+    },
+    {
+        name: 'Red Giant',
+        vars: {
+            '--bg-base':      '#100404',
+            '--bg-surface':   '#200808',
+            '--bg-elevated':  '#301010',
+            '--text-primary': '#ffe8e0',
+            '--text-muted':   '#885555',
+            '--accent':       '#ff5533',
+            '--accent-hot':   '#ff1100',
+            '--accent-good':  '#55ff88',
+            '--accent-cool':  '#ff9966',
+            '--border':       '#551515',
+        },
+    },
+    {
+        name: 'Pulsar',
+        vars: {
+            '--bg-base':      '#000a00',
+            '--bg-surface':   '#001a00',
+            '--bg-elevated':  '#002800',
+            '--text-primary': '#e0ffe0',
+            '--text-muted':   '#3a8a3a',
+            '--accent':       '#00ff44',
+            '--accent-hot':   '#ff4400',
+            '--accent-good':  '#00ff44',
+            '--accent-cool':  '#00ffcc',
+            '--border':       '#005500',
+        },
+    },
+    {
+        name: 'Ice Planet',
+        vars: {
+            '--bg-base':      '#050d18',
+            '--bg-surface':   '#0a1828',
+            '--bg-elevated':  '#102030',
+            '--text-primary': '#e8f8ff',
+            '--text-muted':   '#6090b0',
+            '--accent':       '#88ddff',
+            '--accent-hot':   '#ff6644',
+            '--accent-good':  '#44ffcc',
+            '--accent-cool':  '#88ddff',
+            '--border':       '#1a3040',
+        },
+    },
+    {
+        name: 'Cosmic Dust',
+        vars: {
+            '--bg-base':      '#100810',
+            '--bg-surface':   '#1e0f20',
+            '--bg-elevated':  '#2e1838',
+            '--text-primary': '#f0e8ff',
+            '--text-muted':   '#806888',
+            '--accent':       '#cc88ff',
+            '--accent-hot':   '#ff6688',
+            '--accent-good':  '#88ffcc',
+            '--accent-cool':  '#88aaff',
+            '--border':       '#402050',
+        },
+    },
+    {
+        name: 'Supernova',
+        vars: {
+            '--bg-base':      '#0a0800',
+            '--bg-surface':   '#1a1400',
+            '--bg-elevated':  '#2a2000',
+            '--text-primary': '#fffde8',
+            '--text-muted':   '#908060',
+            '--accent':       '#ffd700',
+            '--accent-hot':   '#ff6600',
+            '--accent-good':  '#99ff44',
+            '--accent-cool':  '#ffe066',
+            '--border':       '#4a3a00',
+        },
+    },
+    {
+        name: 'Wormhole',
+        vars: {
+            '--bg-base':      '#00100e',
+            '--bg-surface':   '#001e1a',
+            '--bg-elevated':  '#003028',
+            '--text-primary': '#ccfffa',
+            '--text-muted':   '#368878',
+            '--accent':       '#00e5cc',
+            '--accent-hot':   '#ff4466',
+            '--accent-good':  '#00e5cc',
+            '--accent-cool':  '#00ccff',
+            '--border':       '#005544',
+        },
+    },
+    {
+        name: 'Black Hole',
+        vars: {
+            '--bg-base':      '#000000',
+            '--bg-surface':   '#050005',
+            '--bg-elevated':  '#0d000d',
+            '--text-primary': '#ddd8ff',
+            '--text-muted':   '#443355',
+            '--accent':       '#9955ff',
+            '--accent-hot':   '#ff2255',
+            '--accent-good':  '#55ff99',
+            '--accent-cool':  '#7755ff',
+            '--border':       '#220033',
+        },
+    },
+    {
+        name: 'Andromeda',
+        vars: {
+            '--bg-base':      '#060410',
+            '--bg-surface':   '#100820',
+            '--bg-elevated':  '#1a1030',
+            '--text-primary': '#ffe8f0',
+            '--text-muted':   '#806878',
+            '--accent':       '#ff99aa',
+            '--accent-hot':   '#ff4466',
+            '--accent-good':  '#99ffcc',
+            '--accent-cool':  '#aaccff',
+            '--border':       '#3a1840',
+        },
+    },
+    {
+        name: 'Titan',
+        vars: {
+            '--bg-base':      '#0e0800',
+            '--bg-surface':   '#1e1000',
+            '--bg-elevated':  '#301800',
+            '--text-primary': '#ffe8cc',
+            '--text-muted':   '#a07040',
+            '--accent':       '#ff9944',
+            '--accent-hot':   '#ff5500',
+            '--accent-good':  '#88cc44',
+            '--accent-cool':  '#ffcc88',
+            '--border':       '#4a2800',
+        },
+    },
+    {
+        name: 'Cryo',
+        vars: {
+            '--bg-base':      '#040810',
+            '--bg-surface':   '#08101e',
+            '--bg-elevated':  '#0e182a',
+            '--text-primary': '#d8eeff',
+            '--text-muted':   '#4a6880',
+            '--accent':       '#66ccff',
+            '--accent-hot':   '#ff4455',
+            '--accent-good':  '#44ffdd',
+            '--accent-cool':  '#66ccff',
+            '--border':       '#1a3050',
+        },
+    },
+    {
+        name: 'Quasar',
+        vars: {
+            '--bg-base':      '#000005',
+            '--bg-surface':   '#05050f',
+            '--bg-elevated':  '#0a0a20',
+            '--text-primary': '#eeeeff',
+            '--text-muted':   '#6666aa',
+            '--accent':       '#66aaff',
+            '--accent-hot':   '#ff3366',
+            '--accent-good':  '#33ffdd',
+            '--accent-cool':  '#99ccff',
+            '--border':       '#151530',
+        },
+    },
+    {
+        name: 'Mars Colony',
+        vars: {
+            '--bg-base':      '#120500',
+            '--bg-surface':   '#220900',
+            '--bg-elevated':  '#331000',
+            '--text-primary': '#ffddb8',
+            '--text-muted':   '#885540',
+            '--accent':       '#dd5522',
+            '--accent-hot':   '#ff2200',
+            '--accent-good':  '#88dd44',
+            '--accent-cool':  '#ee8844',
+            '--border':       '#551800',
+        },
+    },
+    {
+        name: 'Stellar Nursery',
+        vars: {
+            '--bg-base':      '#0f0010',
+            '--bg-surface':   '#1e0022',
+            '--bg-elevated':  '#2d0033',
+            '--text-primary': '#ffe0ff',
+            '--text-muted':   '#886688',
+            '--accent':       '#ff55dd',
+            '--accent-hot':   '#ff2266',
+            '--accent-good':  '#88ffcc',
+            '--accent-cool':  '#bb88ff',
+            '--border':       '#550055',
+        },
+    },
+    {
+        name: 'Dark Energy',
+        vars: {
+            '--bg-base':      '#05000a',
+            '--bg-surface':   '#0a0015',
+            '--bg-elevated':  '#110020',
+            '--text-primary': '#e8d8ff',
+            '--text-muted':   '#5533aa',
+            '--accent':       '#8844ee',
+            '--accent-hot':   '#ee3377',
+            '--accent-good':  '#44ee99',
+            '--accent-cool':  '#6677ff',
+            '--border':       '#220044',
+        },
+    },
+    {
+        name: 'Gamma Burst',
+        vars: {
+            '--bg-base':      '#040800',
+            '--bg-surface':   '#0a1200',
+            '--bg-elevated':  '#121e00',
+            '--text-primary': '#f0ffcc',
+            '--text-muted':   '#668844',
+            '--accent':       '#aaff00',
+            '--accent-hot':   '#ff6600',
+            '--accent-good':  '#aaff00',
+            '--accent-cool':  '#66ff88',
+            '--border':       '#2a4400',
+        },
+    },
+    {
+        name: 'Ion Drive',
+        vars: {
+            '--bg-base':      '#000a12',
+            '--bg-surface':   '#001424',
+            '--bg-elevated':  '#002038',
+            '--text-primary': '#d0f0ff',
+            '--text-muted':   '#335577',
+            '--accent':       '#0088ff',
+            '--accent-hot':   '#ff4466',
+            '--accent-good':  '#00ffaa',
+            '--accent-cool':  '#0088ff',
+            '--border':       '#003366',
+        },
+    },
+    {
+        name: 'Exoplanet',
+        vars: {
+            '--bg-base':      '#000818',
+            '--bg-surface':   '#001030',
+            '--bg-elevated':  '#001848',
+            '--text-primary': '#ccffff',
+            '--text-muted':   '#336688',
+            '--accent':       '#00ffee',
+            '--accent-hot':   '#ff6644',
+            '--accent-good':  '#00ffee',
+            '--accent-cool':  '#0099ff',
+            '--border':       '#003366',
+        },
+    },
+    {
+        name: 'Derelict',
+        vars: {
+            '--bg-base':      '#080a08',
+            '--bg-surface':   '#0e120e',
+            '--bg-elevated':  '#141c14',
+            '--text-primary': '#c8d4b8',
+            '--text-muted':   '#5a6a4a',
+            '--accent':       '#88aa66',
+            '--accent-hot':   '#cc4422',
+            '--accent-good':  '#88cc66',
+            '--accent-cool':  '#6699aa',
+            '--border':       '#2a3a20',
+        },
+    },
+    {
+        name: 'Binary Star',
+        vars: {
+            '--bg-base':      '#050510',
+            '--bg-surface':   '#0a0a20',
+            '--bg-elevated':  '#121230',
+            '--text-primary': '#fff5e8',
+            '--text-muted':   '#806858',
+            '--accent':       '#ffcc44',
+            '--accent-hot':   '#ff6600',
+            '--accent-good':  '#44ffcc',
+            '--accent-cool':  '#44aaff',
+            '--border':       '#2a2040',
+        },
+    },
+    {
+        name: 'Proto Star',
+        vars: {
+            '--bg-base':      '#0a0300',
+            '--bg-surface':   '#180600',
+            '--bg-elevated':  '#260a00',
+            '--text-primary': '#ffeedd',
+            '--text-muted':   '#996644',
+            '--accent':       '#ff6600',
+            '--accent-hot':   '#ff2200',
+            '--accent-good':  '#66ff44',
+            '--accent-cool':  '#ff9933',
+            '--border':       '#441800',
+        },
+    },
+    {
+        name: 'Magnetar',
+        vars: {
+            '--bg-base':      '#020510',
+            '--bg-surface':   '#050a20',
+            '--bg-elevated':  '#080f30',
+            '--text-primary': '#eef4ff',
+            '--text-muted':   '#5566aa',
+            '--accent':       '#aaccff',
+            '--accent-hot':   '#ff3355',
+            '--accent-good':  '#44ffcc',
+            '--accent-cool':  '#aaccff',
+            '--border':       '#1a2250',
+        },
+    },
+    {
+        name: 'Ceres',
+        vars: {
+            '--bg-base':      '#0a0a0c',
+            '--bg-surface':   '#141416',
+            '--bg-elevated':  '#1e1e22',
+            '--text-primary': '#e8e4d8',
+            '--text-muted':   '#706a58',
+            '--accent':       '#ccaa55',
+            '--accent-hot':   '#cc4422',
+            '--accent-good':  '#88cc66',
+            '--accent-cool':  '#8899cc',
+            '--border':       '#363028',
+        },
+    },
+    {
+        name: 'Nebula Rose',
+        vars: {
+            '--bg-base':      '#0d0608',
+            '--bg-surface':   '#1a0c10',
+            '--bg-elevated':  '#271218',
+            '--text-primary': '#ffe8ee',
+            '--text-muted':   '#886670',
+            '--accent':       '#ff88aa',
+            '--accent-hot':   '#ff3355',
+            '--accent-good':  '#88ffcc',
+            '--accent-cool':  '#ffaacc',
+            '--border':       '#441828',
+        },
+    },
+    {
+        name: 'Grav Wave',
+        vars: {
+            '--bg-base':      '#060608',
+            '--bg-surface':   '#0e0e12',
+            '--bg-elevated':  '#16161c',
+            '--text-primary': '#e8e8f0',
+            '--text-muted':   '#666680',
+            '--accent':       '#aaaacc',
+            '--accent-hot':   '#ff4455',
+            '--accent-good':  '#66ffaa',
+            '--accent-cool':  '#8888ff',
+            '--border':       '#222236',
+        },
+    },
+    {
+        name: 'Hawking',
+        vars: {
+            '--bg-base':      '#000006',
+            '--bg-surface':   '#04040f',
+            '--bg-elevated':  '#080818',
+            '--text-primary': '#e8eeff',
+            '--text-muted':   '#444488',
+            '--accent':       '#4488ff',
+            '--accent-hot':   '#ff8800',
+            '--accent-good':  '#44ffcc',
+            '--accent-cool':  '#88aaff',
+            '--border':       '#111144',
+        },
+    },
+];
+
+const NEBULA_DEFAULTS = {
+    '--bg-base':      '#0c1018',
+    '--bg-surface':   '#1f2842',
+    '--bg-elevated':  '#2a365a',
+    '--text-primary': '#f1eee8',
+    '--text-muted':   '#8890a8',
+    '--accent':       '#e8b563',
+    '--accent-hot':   '#ec6262',
+    '--accent-good':  '#7fc592',
+    '--accent-cool':  '#7dbff2',
+    '--border':       '#334b75',
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+    chrome.storage.local.get(['customThemeEnabled', 'customThemeVars'], (res) => {
+        const enabledCheck = document.getElementById('dash-theme-enabled');
+        const vars = res.customThemeVars || { ...NEBULA_DEFAULTS };
+
+        // Render preset buttons
+        const presetsRow = document.getElementById('theme-presets-row');
+        if (presetsRow) {
+            THEME_PRESETS.forEach(preset => {
+                const btn = document.createElement('button');
+                btn.className = 'theme-preset-btn';
+
+                const swatches = document.createElement('div');
+                swatches.className = 'theme-preset-swatches';
+                [preset.vars['--bg-surface'], preset.vars['--accent'], preset.vars['--text-primary']].forEach(color => {
+                    const s = document.createElement('div');
+                    s.className = 'theme-preset-swatch';
+                    s.style.background = color;
+                    swatches.appendChild(s);
+                });
+
+                btn.appendChild(swatches);
+                btn.appendChild(document.createTextNode(preset.name));
+
+                btn.addEventListener('click', () => {
+                    Object.keys(NEBULA_DEFAULTS).forEach(key => {
+                        const input = document.getElementById('tc-' + key);
+                        if (input) input.value = preset.vars[key] || NEBULA_DEFAULTS[key];
+                    });
+                    const enabledCheck = document.getElementById('dash-theme-enabled');
+                    if (enabledCheck) enabledCheck.checked = true;
+                    chrome.storage.local.set({
+                        customThemeVars:    { ...preset.vars },
+                        customThemeEnabled: true,
+                    });
+                });
+
+                presetsRow.appendChild(btn);
+            });
+        }
+
+        // Populate pickers with saved or default values
+        Object.keys(NEBULA_DEFAULTS).forEach(key => {
+            const input = document.getElementById('tc-' + key);
+            if (input) input.value = vars[key] || NEBULA_DEFAULTS[key];
+        });
+
+        if (enabledCheck) {
+            enabledCheck.checked = !!res.customThemeEnabled;
+            enabledCheck.addEventListener('change', () => {
+                chrome.storage.local.set({ customThemeEnabled: enabledCheck.checked });
+            });
+        }
+
+        function saveVars() {
+            const current = {};
+            Object.keys(NEBULA_DEFAULTS).forEach(key => {
+                const input = document.getElementById('tc-' + key);
+                if (input) current[key] = input.value;
+            });
+            chrome.storage.local.set({ customThemeVars: current });
+        }
+
+        Object.keys(NEBULA_DEFAULTS).forEach(key => {
+            const input = document.getElementById('tc-' + key);
+            if (input) input.addEventListener('input', saveVars);
+        });
+
+        const resetBtn = document.getElementById('theme-reset-btn');
+        if (resetBtn) {
+            resetBtn.addEventListener('click', () => {
+                Object.keys(NEBULA_DEFAULTS).forEach(key => {
+                    const input = document.getElementById('tc-' + key);
+                    if (input) input.value = NEBULA_DEFAULTS[key];
+                });
+                chrome.storage.local.set({ customThemeVars: { ...NEBULA_DEFAULTS } });
             });
         }
     });

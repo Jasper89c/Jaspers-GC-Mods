@@ -17,34 +17,34 @@ chrome.storage.local.get(['panelPos', 'presets', 'storedSid', 'assimEnabled', 'i
 
     const container = document.createElement('div');
     container.id = 'gcc-preset-panel';
-    container.style.cssText = `position:fixed; top:${pos.top}; left:${pos.left}; right:${pos.right}; width:210px; background:#2a365a; border:1px solid #3a4d75; z-index:99999; border-radius:10px; overflow:hidden; box-shadow:0 8px 32px rgba(0,0,0,0.65); font-family:Arial,sans-serif; color:white;`;
+    container.style.cssText = `position:fixed; top:${pos.top}; left:${pos.left}; right:${pos.right}; width:210px; background:var(--bg-elevated); border:1px solid var(--border); z-index:99999; border-radius:10px; overflow:hidden; box-shadow:var(--shadow-lg); font-family:Arial,sans-serif; color:var(--text-primary);`;
 
     container.innerHTML = `
         <style>
             #gcc-preset-panel * { box-sizing: border-box; }
-            #gcc-refresh-btn { background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.13); color:#ccc; cursor:pointer; border-radius:5px; padding:3px 8px; font-size:13px; line-height:1; transition:background 0.15s,color 0.15s; }
-            #gcc-refresh-btn:hover { background:rgba(255,255,255,0.17); color:white; }
+            #gcc-refresh-btn { background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.13); color:var(--text-secondary); cursor:pointer; border-radius:5px; padding:3px 8px; font-size:13px; line-height:1; transition:background 0.15s,color 0.15s; }
+            #gcc-refresh-btn:hover { background:rgba(255,255,255,0.17); color:var(--text-primary); }
             .gcc-section { padding:8px 10px; border-bottom:1px solid rgba(255,255,255,0.07); }
-            .gcc-section-label { font-size:9px; color:#ff9800; font-weight:800; letter-spacing:0.8px; text-transform:uppercase; margin-bottom:6px; }
-            .gcc-section-sublabel { font-size:9px; color:#888; font-weight:700; letter-spacing:0.5px; text-transform:uppercase; margin-bottom:5px; }
-            #gcc-cluster-mineral { background:#192035; color:white; border:1px solid rgba(255,255,255,0.1); border-radius:5px; font-size:11px; padding:5px 22px 5px 7px; width:100%; cursor:pointer; outline:none; appearance:none; -webkit-appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23888' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 7px center; }
-            #gcc-cluster-mineral:focus { border-color:rgba(255,152,0,0.4); }
-            .gcc-collapse-header { padding:7px 10px; background:#192035; cursor:pointer; display:flex; justify-content:space-between; align-items:center; border-top:1px solid rgba(255,255,255,0.07); transition:background 0.12s; }
-            .gcc-collapse-header:hover { background:#1d2a48; }
-            .gcc-collapse-title { font-size:10px; color:#ff9800; font-weight:700; letter-spacing:0.4px; }
-            .gcc-collapse-arrow { font-size:10px; color:#555; transition:color 0.12s; }
-            .gcc-collapse-header:hover .gcc-collapse-arrow { color:#999; }
-            .gcc-collapse-body { background:#192035; padding:0 8px 8px; }
+            .gcc-section-label { font-size:9px; color:var(--accent); font-weight:800; letter-spacing:0.8px; text-transform:uppercase; margin-bottom:6px; }
+            .gcc-section-sublabel { font-size:9px; color:var(--text-muted); font-weight:700; letter-spacing:0.5px; text-transform:uppercase; margin-bottom:5px; }
+            #gcc-cluster-mineral { background:var(--bg-base); color:var(--text-primary); border:1px solid var(--border); border-radius:5px; font-size:11px; padding:5px 22px 5px 7px; width:100%; cursor:pointer; outline:none; appearance:none; -webkit-appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23888' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 7px center; }
+            #gcc-cluster-mineral:focus { border-color:var(--border-strong); }
+            .gcc-collapse-header { padding:7px 10px; background:var(--bg-base); cursor:pointer; display:flex; justify-content:space-between; align-items:center; border-top:1px solid rgba(255,255,255,0.07); transition:background 0.12s; }
+            .gcc-collapse-header:hover { background:var(--bg-surface); }
+            .gcc-collapse-title { font-size:10px; color:var(--accent); font-weight:700; letter-spacing:0.4px; }
+            .gcc-collapse-arrow { font-size:10px; color:var(--text-muted); transition:color 0.12s; }
+            .gcc-collapse-header:hover .gcc-collapse-arrow { color:var(--text-secondary); }
+            .gcc-collapse-body { background:var(--bg-base); padding:0 8px 8px; }
             .gcc-cluster-btns { display:flex; flex-direction:column; gap:3px; padding-top:6px; }
-            .gcc-global-cluster { background:transparent; color:#bbb; border:1px solid rgba(255,255,255,0.07); font-size:10px; padding:6px 8px; cursor:pointer; border-radius:5px; text-align:left; transition:background 0.12s,border-color 0.12s,color 0.12s; width:100%; font-family:Arial,sans-serif; }
-            .gcc-global-cluster:hover { background:rgba(255,152,0,0.1); border-color:rgba(255,152,0,0.28); color:white; }
-            #gcc-cluster-status { font-size:9px; color:#888; text-align:center; padding:4px 0; min-height:18px; }
-            .gcc-footer-link { display:block; background:#192035; color:#9edcfe; font-size:10px; text-decoration:none; padding:9px 0; text-align:center; font-weight:700; letter-spacing:0.3px; transition:background 0.12s,color 0.12s; border-top:1px solid rgba(255,255,255,0.07); }
-            .gcc-footer-link:hover { background:#1d2a48; color:#fff; }
+            .gcc-global-cluster { background:transparent; color:var(--text-secondary); border:1px solid var(--border); font-size:10px; padding:6px 8px; cursor:pointer; border-radius:5px; text-align:left; transition:background 0.12s,border-color 0.12s,color 0.12s; width:100%; font-family:Arial,sans-serif; }
+            .gcc-global-cluster:hover { background:color-mix(in srgb, var(--accent) 10%, transparent); border-color:color-mix(in srgb, var(--accent) 28%, transparent); color:var(--text-primary); }
+            #gcc-cluster-status { font-size:9px; color:var(--text-muted); text-align:center; padding:4px 0; min-height:18px; }
+            .gcc-footer-link { display:block; background:var(--bg-base); color:var(--accent-cool); font-size:10px; text-decoration:none; padding:9px 0; text-align:center; font-weight:700; letter-spacing:0.3px; transition:background 0.12s,color 0.12s; border-top:1px solid rgba(255,255,255,0.07); }
+            .gcc-footer-link:hover { background:var(--bg-surface); color:var(--text-primary); }
         </style>
 
-        <div id="gcc-handle" style="background:#192035; padding:9px 10px; cursor:move; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.08); user-select:none;">
-            <span style="font-size:11px; font-weight:800; color:#ff9800; letter-spacing:1px;">⠿ HELPER</span>
+        <div id="gcc-handle" style="background:var(--bg-base); padding:9px 10px; cursor:move; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.08); user-select:none;">
+            <span style="font-size:11px; font-weight:800; color:var(--accent); letter-spacing:1px;">⠿ HELPER</span>
             <button id="gcc-refresh-btn" title="Refresh Page">↻</button>
         </div>
 

@@ -11,14 +11,14 @@ function attachQuickBuild() {
         style.id = 'gcc-quick-build-style';
         style.textContent = `
             .gcc-qb-row { cursor: pointer; }
-            .gcc-qb-row:hover > td { background: rgba(255,152,0,0.06) !important; }
+            .gcc-qb-row:hover > td { background: color-mix(in srgb, var(--accent) 6%, transparent) !important; }
             .gcc-qb-expanded > td { padding: 0 !important; }
-            .gcc-qb-panel { display:flex; gap:16px; padding:12px; background:#1a2035; border-top:2px solid #ff9800; flex-wrap:wrap; }
+            .gcc-qb-panel { display:flex; gap:16px; padding:12px; background:var(--bg-base); border-top:2px solid var(--accent); flex-wrap:wrap; }
             .gcc-qb-panel table { font-size:12px; width:100%; }
             .gcc-qb-panel table td { padding: 3px 6px; }
-            .gcc-qb-panel input[type="text"] { background:#2a365a; color:white; border:1px solid #555; border-radius:3px; padding:2px 4px; }
-            .gcc-qb-panel input[type="button"], .gcc-qb-panel input[type="submit"] { background:#1f2842; color:white; border:1px solid #555; border-radius:4px; padding:4px 10px; cursor:pointer; font-size:11px; margin:2px; }
-            .gcc-qb-panel input[type="submit"]:hover { background:rgba(255,152,0,0.2); border-color:#ff9800; }
+            .gcc-qb-panel input[type="text"] { background:var(--bg-elevated); color:var(--text-primary); border:1px solid var(--border); border-radius:3px; padding:2px 4px; }
+            .gcc-qb-panel input[type="button"], .gcc-qb-panel input[type="submit"] { background:var(--bg-surface); color:var(--text-primary); border:1px solid var(--border); border-radius:4px; padding:4px 10px; cursor:pointer; font-size:11px; margin:2px; }
+            .gcc-qb-panel input[type="submit"]:hover { background:color-mix(in srgb, var(--accent) 20%, transparent); border-color:var(--accent); }
             .gcc-qb-status { font-size:11px; padding:6px 8px; width:100%; display:none; }
         `;
         document.head.appendChild(style);
