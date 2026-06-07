@@ -132,7 +132,9 @@ chrome.storage.local.get(['panelPos', 'presets', 'storedSid', 'assimEnabled', 'i
         if (battleLogsEnabledState) { observeUntil('table.gc-battle-prev-table', attachBattleLogs); }
         if (res.fedLazy) { try { attachFedLazy(sid); } catch(e){} }
         if (res.fedFull) { try { attachFedFull(sid); } catch(e){} }
+        observeUntil('table.gc-fed-list', () => { try { attachFedJoinStats(); } catch(e){} });
         addMarketQuickFill();
+        initIncomePage();
         return;
     }
     document.body.appendChild(container);
@@ -296,7 +298,9 @@ function setupLogic(container, presets, sid, assimEnabled, infectEnabled, cluste
     // Federation live load
     if (fedLazy) { try { attachFedLazy(sid); } catch(e){} }
     if (fedFull) { try { attachFedFull(sid); } catch(e){} }
+    observeUntil('table.gc-fed-list', () => { try { attachFedJoinStats(); } catch(e){} });
     addMarketQuickFill();
+    observeUntil('.gc-income-page', enhanceIncomePage);
 
     // Cluster section visibility
     const applyVisibility = (wrapperId, isHiddenFromDashboard) => {

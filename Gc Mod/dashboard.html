@@ -184,6 +184,69 @@
         /* ── Split View card ── */
         .card--wide { grid-column: 1 / -1; }
 
+        /* ── Session Log card ── */
+        .log-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0;
+        }
+
+        .log-stat {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            padding: 10px 16px;
+            border-bottom: 1px solid var(--border);
+            border-right: 1px solid var(--border);
+        }
+
+        .log-stat:nth-child(even) { border-right: none; }
+        .log-stat:nth-last-child(-n+2) { border-bottom: none; }
+
+        .log-stat__label {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            color: var(--text-muted);
+        }
+
+        .log-stat__value {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--text);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .log-stat__value.positive { color: #4caf50; }
+        .log-stat__value.negative { color: #ef5350; }
+        .log-stat__value.neutral  { color: var(--text-muted); }
+
+        .log-actions-row {
+            display: flex;
+            gap: 8px;
+            padding: 10px 16px;
+            justify-content: flex-end;
+            border-top: 1px solid var(--border);
+        }
+
+        .log-btn {
+            padding: 5px 14px;
+            font-size: 11px;
+            font-family: inherit;
+            cursor: pointer;
+            border-radius: 6px;
+            border: 1px solid rgba(255,255,255,0.1);
+            background: transparent;
+            color: var(--text-muted);
+            transition: all 0.12s;
+        }
+
+        .log-btn:hover { border-color: rgba(255,255,255,0.2); color: var(--text); }
+
+        .log-btn--danger { border-color: rgba(239,83,80,0.3); color: #ef5350; }
+        .log-btn--danger:hover { background: rgba(239,83,80,0.1); border-color: #ef5350; }
+
         /* ── Collapsible cards ── */
         .card-header {
             cursor: pointer;
@@ -442,10 +505,29 @@
                 <h1>Jaspers GC Mods</h1>
                 <p>Feature dashboard · gcc.wrindustries.com</p>
             </div>
-            <div class="version">v2.7</div>
+            <div class="version">v3.0</div>
         </div>
 
         <div class="grid">
+
+            <div class="card card--wide" id="logs-card">
+                <div class="card-header">
+                    <div class="card-icon">📊</div>
+                    <span class="card-title">Session Log</span>
+                </div>
+                <div class="log-grid" id="logs-grid">
+                    <div class="log-stat"><span class="log-stat__label">⏱ Play Time</span><span class="log-stat__value neutral" id="log-playtime">—</span></div>
+                    <div class="log-stat"><span class="log-stat__label">🔄 Turns Used</span><span class="log-stat__value" id="log-turns">—</span></div>
+                    <div class="log-stat"><span class="log-stat__label">💰 Credits</span><span class="log-stat__value" id="log-cash">—</span></div>
+                    <div class="log-stat"><span class="log-stat__label">🌾 Food</span><span class="log-stat__value" id="log-food">—</span></div>
+                    <div class="log-stat"><span class="log-stat__label">📦 Goods</span><span class="log-stat__value" id="log-goods">—</span></div>
+                    <div class="log-stat"><span class="log-stat__label">💎 Minerals</span><span class="log-stat__value" id="log-minerals">—</span></div>
+                    <div class="log-stat"><span class="log-stat__label">⛏ Ore</span><span class="log-stat__value" id="log-ore">—</span></div>
+                </div>
+                <div class="log-actions-row">
+                    <button class="log-btn log-btn--danger" id="logs-reset-btn">Reset Session</button>
+                </div>
+            </div>
 
             <div class="card">
                 <div class="card-header">

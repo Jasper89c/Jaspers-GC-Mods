@@ -765,6 +765,62 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
+// ─── Session Log ──────────────────────────────────────────────────────────────
+
+function logFormatDuration(ms) {
+    const s = Math.floor(ms / 1000);
+    const m = Math.floor(s / 60);
+    const h = Math.floor(m / 60);
+    if (h > 0) return `${h}h ${m % 60}m`;
+    if (m > 0) return `${m}m`;
+    return `${s}s`;
+}
+
+function logFormatDelta(delta) {
+    if (delta === null || delta === undefined || isNaN(delta)) return null;
+    const abs = Math.abs(delta);
+    let str;
+    if (abs >= 1e9)      str = (abs / 1e9).toFixed(2) + 'B';
+    else if (abs >= 1e6) str = (abs / 1e6).toFixed(2) + 'M';
+    else if (abs >= 1e3) str = (abs / 1e3).toFixed(1) + 'K';
+    else                 str = abs.toLocaleString();
+    return (delta >= 0 ? '+' : '−') + str;
+}
+
+function logSetStat(id, value, isTurns) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (!value && value !== 0) { el.textContent = '—'; el.className = 'log-stat__value neutral'; return; }
+    el.textContent = isTurns ? value : logFormatDelta(value);
+    el.className   = 'log-stat__value ' + (value > 0 ? 'positive' : value < 0 ? 'negative' : 'neutral');
+}
+
+function renderSessionLog() {
+    chrome.storage.local.get(['sessionStart', 'sessionTotals'], (res) => {
+        const playtime = document.getElementById('log-playtime');
+        if (playtime) {
+            playtime.textContent = res.sessionStart ? logFormatDuration(Date.now() - res.sessionStart) : '—';
+        }
+
+        const t = res.sessionTotals || {};
+        logSetStat('log-turns',    t.turns,    true);
+        logSetStat('log-cash',     t.cash,     false);
+        logSetStat('log-food',     t.food,     false);
+        logSetStat('log-goods',    t.goods,    false);
+        logSetStat('log-minerals', t.minerals, false);
+        logSetStat('log-ore',      t.ore,      false);
+    });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    renderSessionLog();
+    setInterval(renderSessionLog, 5000);
+
+    document.getElementById('logs-reset-btn')?.addEventListener('click', () => {
+        chrome.storage.local.remove(['sessionStart', 'sessionTotals'], renderSessionLog);
+    });
+});
+
 // ─── Split View ───────────────────────────────────────────────────────────────
 
 const SV_PAGES = [

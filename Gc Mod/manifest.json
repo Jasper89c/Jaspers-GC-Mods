@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Jaspers GC Mods",
-  "version": "2.7",
+  "version": "3.0",
   "permissions": [
     "storage",
     "webRequest",
@@ -30,6 +30,7 @@
       "js": [
         "features/globals.js",
         "features/themes.js",
+        "features/logger.js",
         "features/automation.js",
         "features/cluster.js",
         "features/federation.js",
@@ -39,6 +40,7 @@
         "features/disband.js",
         "features/colony.js",
         "features/market.js",
+        "features/income.js",
         "features/updates.js",
         "features/chat.js",
         "features/quick-build.js",
