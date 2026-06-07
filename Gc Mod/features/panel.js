@@ -130,6 +130,7 @@ chrome.storage.local.get(['panelPos', 'presets', 'storedSid', 'assimEnabled', 'i
         if (res.infectEnabled) { observeUntil('table.gc-colony-modern-table', () => addInfectButtons(sid)); }
         if (quickBuildEnabledState) { observeUntil('table.gc-colony-modern-table', attachQuickBuild); }
         if (battleLogsEnabledState) { observeUntil('table.gc-battle-prev-table', attachBattleLogs); }
+        observeUntil('table.gc-colupgrade-minerals', addColonyUpgradeLandColumn);
         if (res.fedLazy) { try { attachFedLazy(sid); } catch(e){} }
         if (res.fedFull) { try { attachFedFull(sid); } catch(e){} }
         observeUntil('table.gc-fed-list', () => { try { attachFedJoinStats(); } catch(e){} });
@@ -138,6 +139,8 @@ chrome.storage.local.get(['panelPos', 'presets', 'storedSid', 'assimEnabled', 'i
         return;
     }
     document.body.appendChild(container);
+
+    observeUntil('table.gc-colupgrade-minerals', addColonyUpgradeLandColumn);
 
     setupLogic(container, savedPresets, sid, !!res.assimEnabled, !!res.infectEnabled, !!res.clusterCollapsed, !!res.similareCollapsed, !!res.viralCollapsed, !!res.fedLazy, !!res.fedFull, simsLinksEnabledState, importantEventsLinkEnabledState);
 
