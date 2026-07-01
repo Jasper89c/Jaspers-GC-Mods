@@ -494,6 +494,76 @@
             border-radius: 3px;
             border: 1px solid rgba(255,255,255,0.1);
         }
+
+        /* ── Custom Links ── */
+        .cl-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .cl-row input {
+            background: var(--bg);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 6px;
+            color: var(--text);
+            padding: 6px 9px;
+            font-size: 12px;
+            font-family: inherit;
+            transition: border-color 0.12s;
+            min-width: 0;
+        }
+        .cl-row input:hover  { border-color: rgba(255,255,255,0.2); }
+        .cl-row input:focus  { outline: none; border-color: var(--accent); }
+        .cl-row input.cl-name { flex: 0 0 150px; }
+        .cl-row input.cl-url  { flex: 1 1 auto; }
+
+        .cl-remove {
+            flex-shrink: 0;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: transparent;
+            border: 1px solid rgba(239,83,80,0.3);
+            border-radius: 6px;
+            color: #ef5350;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.12s;
+        }
+        .cl-remove:hover { background: rgba(239,83,80,0.1); border-color: #ef5350; }
+
+        .cl-empty {
+            padding: 14px 16px;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .cl-add-row {
+            display: flex;
+            justify-content: flex-end;
+            padding: 11px 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .cl-add-btn {
+            padding: 6px 16px;
+            background: var(--accent-dim);
+            border: 1px solid var(--accent-border);
+            border-radius: 7px;
+            color: var(--accent);
+            font-size: 12px;
+            font-weight: 700;
+            font-family: inherit;
+            letter-spacing: 0.3px;
+            cursor: pointer;
+            transition: background 0.12s, border-color 0.12s;
+        }
+        .cl-add-btn:hover { background: rgba(255,152,0,0.22); border-color: var(--accent); }
     </style>
 </head>
 <body>
@@ -633,6 +703,17 @@
                     <span class="toggle-label">Quick Fill &amp; Auto Trade</span>
                     <label class="switch"><input type="checkbox" id="dash-market-quickfill"><span class="slider"></span></label>
                 </label>
+            </div>
+
+            <div class="card card--wide" id="links-card">
+                <div class="card-header">
+                    <div class="card-icon">🔗</div>
+                    <span class="card-title">Custom Links</span>
+                </div>
+                <div id="custom-links-list"></div>
+                <div class="cl-add-row">
+                    <button class="cl-add-btn" id="cl-add-btn">+ Add Link</button>
+                </div>
             </div>
 
             <div class="card card--wide" id="theme-card">

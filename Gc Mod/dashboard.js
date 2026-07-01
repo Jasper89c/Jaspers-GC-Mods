@@ -1000,3 +1000,80 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     );
 });
+
+// ─── Custom Links ─────────────────────────────────────────────────────────────
+
+document.addEventListener('DOMContentLoaded', () => {
+    const list   = document.getElementById('custom-links-list');
+    const addBtn = document.getElementById('cl-add-btn');
+    if (!list || !addBtn) return;
+
+    let links = [];
+
+    function save() {
+        // Drop fully-empty rows before persisting.
+        const cleaned = links
+            .map(l => ({ name: (l.name || '').trim(), url: (l.url || '').trim() }))
+            .filter(l => l.name || l.url);
+        chrome.storage.local.set({ customLinks: cleaned });
+    }
+
+    function render() {
+        list.innerHTML = '';
+
+        if (!links.length) {
+            const empty = document.createElement('div');
+            empty.className = 'cl-empty';
+            empty.textContent = 'No links yet. Click “Add Link” to create one.';
+            list.appendChild(empty);
+            return;
+        }
+
+        links.forEach((link, i) => {
+            const row = document.createElement('div');
+            row.className = 'cl-row';
+
+            const name = document.createElement('input');
+            name.type = 'text';
+            name.className = 'cl-name';
+            name.placeholder = 'Name';
+            name.value = link.name || '';
+            name.addEventListener('input', () => { links[i].name = name.value; save(); });
+
+            const url = document.createElement('input');
+            url.type = 'text';
+            url.className = 'cl-url';
+            url.placeholder = 'https://gcc.wrindustries.com/i.cfm?...';
+            url.value = link.url || '';
+            url.addEventListener('input', () => { links[i].url = url.value; save(); });
+
+            const remove = document.createElement('button');
+            remove.className = 'cl-remove';
+            remove.title = 'Remove link';
+            remove.textContent = '✕';
+            remove.addEventListener('click', () => {
+                links.splice(i, 1);
+                render();
+                save();
+            });
+
+            row.appendChild(name);
+            row.appendChild(url);
+            row.appendChild(remove);
+            list.appendChild(row);
+        });
+    }
+
+    chrome.storage.local.get(['customLinks'], (res) => {
+        links = Array.isArray(res.customLinks) ? res.customLinks.slice() : [];
+        render();
+    });
+
+    addBtn.addEventListener('click', () => {
+        links.push({ name: '', url: '' });
+        render();
+        // Focus the name field of the row just added.
+        const lastRow = list.querySelector('.cl-row:last-child .cl-name');
+        if (lastRow) lastRow.focus();
+    });
+});

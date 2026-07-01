@@ -52,8 +52,8 @@ function addSimulationsLinks() {
     wrapper.appendChild(title);
 
     const links = [
-        { text: 'Battle Sim', href: 'https://augury.drlat.dev/sim' },
-        { text: 'Eco Sim', href: 'https://augury.drlat.dev/eco' }
+        { text: 'drlat Sims', href: 'https://augury.drlat.dev' },
+        { text: 'Cagito Sims', href: 'https://jsitor.com/profile/cagito2-stack' },
     ];
 
     links.forEach(linkData => {

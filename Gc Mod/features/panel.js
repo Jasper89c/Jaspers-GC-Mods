@@ -117,6 +117,7 @@ chrome.storage.local.get(['panelPos', 'presets', 'storedSid', 'assimEnabled', 'i
         <div id="gcc-cluster-status"></div>
 
         <a href="#" id="lnk-dashboard" class="gcc-footer-link">Dashboard</a>
+        <div id="gcc-custom-links"></div>
     `;
     if (window.top !== window.self) {
         if (typeof attachShipHoverTooltips === 'function') attachShipHoverTooltips();
@@ -147,6 +148,24 @@ chrome.storage.local.get(['panelPos', 'presets', 'storedSid', 'assimEnabled', 'i
     renderEmbeddedBottomChat();
 });
 
+function renderCustomLinks() {
+    const wrap = document.getElementById('gcc-custom-links');
+    if (!wrap) return;
+    chrome.storage.local.get(['customLinks'], (res) => {
+        wrap.innerHTML = '';
+        const links = Array.isArray(res.customLinks) ? res.customLinks : [];
+        links.forEach(link => {
+            const url = link && link.url ? String(link.url).trim() : '';
+            if (!url) return;
+            const a = document.createElement('a');
+            a.className = 'gcc-footer-link';
+            a.href = url;
+            a.textContent = (link.name && String(link.name).trim()) ? String(link.name).trim() : url;
+            wrap.appendChild(a);
+        });
+    });
+}
+
 function observeUntil(selector, callback, timeout = 5000) {
     if (document.querySelector(selector)) { callback(); return; }
     const obs = new MutationObserver(() => {
@@ -170,6 +189,12 @@ function setupLogic(container, presets, sid, assimEnabled, infectEnabled, cluste
             window.open(dashboardUrl, '_blank');
         });
     }
+
+    // User-defined custom links, shown under the Dashboard link.
+    renderCustomLinks();
+    chrome.storage.onChanged.addListener((changes, ns) => {
+        if (ns === 'local' && changes.customLinks) renderCustomLinks();
+    });
 
     // Global Colony Cluster buttons
     document.querySelectorAll('.gcc-global-cluster').forEach(btn => {
