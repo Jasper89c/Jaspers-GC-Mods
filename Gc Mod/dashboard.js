@@ -231,6 +231,132 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
+// ─── Artifact Tracker ───────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+    const trackerList = document.getElementById('artifact-tracker-list');
+    const storageKey = 'artifactTrackerEntries';
+    const collapseKey = 'artifactTrackerCollapsed';
+
+    if (!trackerList) return;
+
+    const getCollapsedState = () => {
+        try {
+            return JSON.parse(localStorage.getItem(collapseKey) || '{}');
+        } catch {
+            return {};
+        }
+    };
+
+    const saveCollapsedState = (state) => {
+        localStorage.setItem(collapseKey, JSON.stringify(state));
+    };
+
+    const formatDateLabel = (dateValue) => {
+        if (!dateValue) return 'Unknown date';
+        const [year, month, day] = dateValue.split('-').map(Number);
+        if (!year || !month || !day) return dateValue;
+        return `${month}/${day}/${String(year).slice(-2)}`;
+    };
+
+    const renderTracker = (entries) => {
+        const collapsedState = getCollapsedState();
+
+        if (!entries.length) {
+            trackerList.innerHTML = '<div class="tracker-empty">No artifact data logged yet.</div>';
+            return;
+        }
+
+        const markup = entries.map((dayEntry) => {
+            const dayId = `tracker-date-${dayEntry.date}`;
+            const isDayCollapsed = !!collapsedState[dayId];
+            const blockMarkup = (dayEntry.blocks || []).map((block) => {
+                const blockId = `tracker-block-${dayEntry.date}-${block.startTime}-${block.endTime}-${block.rarity}`;
+                const isBlockCollapsed = !!collapsedState[blockId];
+                const artifacts = (block.artifacts || []).filter(item => item && item.count > 0);
+                const artifactMarkup = artifacts.map((artifact) => `
+                    <div class="tracker-artifact-item">
+                        <span>${artifact.name}</span>
+                        <span class="tracker-artifact-count">${artifact.count} found</span>
+                    </div>
+                `).join('');
+
+                return `
+                    <div class="tracker-block-group ${isBlockCollapsed ? 'collapsed' : ''}">
+                        <button class="tracker-block-header" type="button" data-target="${blockId}">
+                            <span class="tracker-date-label">Dig Block (${block.startTime} – ${block.endTime} ${block.rarity})</span>
+                            <span class="tracker-block-meta">${artifacts.length} artifact${artifacts.length === 1 ? '' : 's'}</span>
+                        </button>
+                        <div class="tracker-block-body">
+                            ${artifactMarkup || '<div class="tracker-empty">No artifact totals logged for this block.</div>'}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            return `
+                <div class="tracker-date-group ${isDayCollapsed ? 'collapsed' : ''}">
+                    <button class="tracker-date-header" type="button" data-target="${dayId}">
+                        <span class="tracker-date-label">${formatDateLabel(dayEntry.date)}</span>
+                        <span class="tracker-date-meta">${(dayEntry.blocks || []).length} dig block${(dayEntry.blocks || []).length === 1 ? '' : 's'}</span>
+                    </button>
+                    <div class="tracker-date-body">${blockMarkup}</div>
+                </div>
+            `;
+        }).join('');
+
+        trackerList.innerHTML = markup;
+
+        trackerList.querySelectorAll('.tracker-date-header').forEach((button) => {
+            button.addEventListener('click', () => {
+                const target = button.dataset.target;
+                const parent = button.closest('.tracker-date-group');
+                if (!parent) return;
+                const nextCollapsed = parent.classList.contains('collapsed');
+                parent.classList.toggle('collapsed', !nextCollapsed);
+                const state = getCollapsedState();
+                state[target] = !nextCollapsed;
+                saveCollapsedState(state);
+            });
+        });
+
+        trackerList.querySelectorAll('.tracker-block-header').forEach((button) => {
+            button.addEventListener('click', () => {
+                const target = button.dataset.target;
+                const parent = button.closest('.tracker-block-group');
+                if (!parent) return;
+                const nextCollapsed = parent.classList.contains('collapsed');
+                parent.classList.toggle('collapsed', !nextCollapsed);
+                const state = getCollapsedState();
+                state[target] = !nextCollapsed;
+                saveCollapsedState(state);
+            });
+        });
+    };
+
+    const saveTracker = (entries) => {
+        chrome.storage.local.set({ [storageKey]: entries });
+        renderTracker(entries);
+    };
+
+    const loadTracker = () => {
+        chrome.storage.local.get([storageKey], (res) => {
+            const entries = Array.isArray(res[storageKey]) ? res[storageKey] : [];
+            entries.sort((a, b) => b.date.localeCompare(a.date));
+            renderTracker(entries);
+        });
+    };
+
+    const clearBtn = document.getElementById('tracker-clear-btn');
+    if (clearBtn) {
+        clearBtn.addEventListener('click', () => {
+            if (!confirm('Clear all logged artifact tracker data? This cannot be undone.')) return;
+            chrome.storage.local.set({ [storageKey]: [] }, loadTracker);
+        });
+    }
+
+    loadTracker();
+});
+
 // ─── Custom Theme ─────────────────────────────────────────────────────────────
 
 const THEME_PRESETS = [
@@ -994,6 +1120,10 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             // ── Open button ────────────────────────────────────────────────
+            document.getElementById('ecosim-open-btn')?.addEventListener('click', () => {
+                window.open(chrome.runtime.getURL('ecosim.html'), '_blank');
+            });
+
             document.getElementById('sv-open-btn').addEventListener('click', () => {
                 window.open(chrome.runtime.getURL('splitview.html'), '_blank');
             });

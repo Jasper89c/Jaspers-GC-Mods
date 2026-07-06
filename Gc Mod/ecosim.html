@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GC Helper - Eco Sim</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg:           #0d1117;
+            --bg-card:      #161b22;
+            --bg-hover:     #1c2128;
+            --border:       rgba(255,255,255,0.07);
+            --accent:       #ff9800;
+            --accent-dim:   rgba(255,152,0,0.12);
+            --accent-border:rgba(255,152,0,0.28);
+            --text:         #e6edf3;
+            --text-muted:   #7d8590;
+            --text-subtle:  #3d444d;
+            --negative:     #ef5350;
+            --shadow:       0 1px 3px rgba(0,0,0,0.5), 0 4px 16px rgba(0,0,0,0.3);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 32px 24px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .container { max-width: 1600px; margin: 0 auto; }
+
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 18px 22px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow);
+        }
+        .header-logo { font-size: 26px; color: var(--accent); line-height: 1; user-select: none; }
+        .header-text h1 { font-size: 17px; font-weight: 700; letter-spacing: -0.3px; }
+        .header-text p { font-size: 12px; color: var(--text-muted); margin-top: 1px; }
+        .header-back {
+            margin-left: auto;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+            color: var(--accent);
+            background: var(--accent-dim);
+            border: 1px solid var(--accent-border);
+            padding: 6px 12px;
+            border-radius: 20px;
+            text-decoration: none;
+        }
+        .header-back:hover { background: rgba(255,152,0,0.22); }
+
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 14px; margin-bottom: 14px; }
+
+        .eco-row-5 { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; margin-bottom: 14px; align-items: start; }
+        @media (max-width: 1200px) { .eco-row-5 { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+        @media (max-width: 700px) { .eco-row-5 { grid-template-columns: 1fr; } }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+        .card--wide { grid-column: 1 / -1; }
+        .card-header { display: flex; align-items: center; gap: 10px; padding: 13px 16px; border-bottom: 1px solid var(--border); background: rgba(255,255,255,0.02); }
+        .card-icon { width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; background: var(--accent-dim); border-radius: 7px; font-size: 15px; flex-shrink: 0; }
+        .card-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.9px; color: var(--accent); }
+        .card-sub { margin-left: auto; font-size: 11px; color: var(--text-muted); }
+
+        /* ── Toolbar ── */
+        .eco-toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 16px;
+        }
+        .eco-field { display: flex; flex-direction: column; gap: 4px; font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+        .eco-field input, .eco-field select {
+            background: var(--bg); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px;
+            color: var(--text); padding: 6px 8px; font-size: 12px; font-family: inherit;
+        }
+        .eco-field input:focus, .eco-field select:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+        .eco-spacer { flex: 1 1 auto; }
+
+        .eco-btn {
+            padding: 7px 14px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1);
+            background: transparent; color: var(--text-muted); font-size: 12px; font-family: inherit;
+            cursor: pointer; transition: all 0.12s; white-space: nowrap;
+        }
+        .eco-btn:hover { border-color: rgba(255,255,255,0.2); color: var(--text); }
+        .eco-btn--primary { background: var(--accent-dim); border-color: var(--accent-border); color: var(--accent); font-weight: 700; }
+        .eco-btn--primary:hover { background: rgba(255,152,0,0.22); }
+        .eco-btn--danger { border-color: rgba(239,83,80,0.3); color: var(--negative); }
+        .eco-btn--danger:hover { background: rgba(239,83,80,0.1); border-color: var(--negative); }
+
+        /* ── Stat rows ── */
+        .eco-stat-row { padding: 8px 16px; font-size: 12px; color: var(--text); border-bottom: 1px solid var(--border); }
+        .eco-stat-row:last-child { border-bottom: none; }
+        .eco-negative { color: var(--negative) !important; }
+
+        .eco-toggle-row { display: flex; align-items: center; gap: 10px; padding: 8px 16px; border-bottom: 1px solid var(--border); font-size: 12px; }
+        .eco-toggle-row:last-child { border-bottom: none; }
+        .eco-toggle-row input[type="number"] { width: 80px; }
+
+        /* ── Race mods ── */
+        .eco-mods-grid { display: grid; grid-template-columns: 1fr auto; }
+        .eco-mods-grid .eco-mod-label { padding: 7px 16px; font-size: 12px; color: var(--text-muted); border-bottom: 1px solid var(--border); }
+        .eco-mods-grid .eco-mod-value { padding: 7px 16px; font-size: 12px; font-weight: 700; text-align: right; border-bottom: 1px solid var(--border); }
+
+        /* ── Income summary ── */
+        .eco-income-credits { padding: 12px 16px; font-size: 16px; font-weight: 700; border-bottom: 1px solid var(--border); }
+        .eco-income-strip { display: flex; flex-wrap: wrap; gap: 16px; padding: 10px 16px; font-size: 12px; border-bottom: 1px solid var(--border); }
+        .eco-income-perstat { display: flex; flex-wrap: wrap; gap: 16px; padding: 10px 16px; font-size: 12px; }
+
+        /* ── Quick econ buttons ── */
+        .eco-quickbtns { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px 16px; border-bottom: 1px solid var(--border); }
+
+        /* ── Colony table ── */
+        .eco-table-wrap { overflow-x: auto; }
+        .eco-table { width: 100%; border-collapse: collapse; font-size: 11.5px; white-space: nowrap; }
+        .eco-table th { padding: 8px 6px; text-align: center; font-size: 10px; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-muted); border-bottom: 1px solid var(--border); }
+        .eco-table td { padding: 4px 5px; text-align: center; border-bottom: 1px solid var(--border); }
+        .eco-table input, .eco-table select {
+            background: var(--bg); border: 1px solid rgba(255,255,255,0.1); border-radius: 5px;
+            color: var(--text); padding: 4px 5px; font-size: 11.5px; font-family: inherit; width: 100%; min-width: 58px;
+        }
+        .eco-table select { min-width: 108px; }
+        .eco-table input:focus, .eco-table select:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+        .eco-table input:disabled, .eco-table select:disabled { opacity: 0.4; }
+
+        .eco-cap-btn, .eco-remove-btn {
+            padding: 4px 9px; border-radius: 5px; border: 1px solid rgba(255,255,255,0.1);
+            background: transparent; color: var(--text-muted); font-size: 11px; font-family: inherit; cursor: pointer;
+        }
+        .eco-cap-btn:hover { border-color: rgba(255,255,255,0.2); color: var(--text); }
+        .eco-remove-btn { border-color: rgba(239,83,80,0.3); color: var(--negative); font-weight: 700; }
+        .eco-remove-btn:hover { background: rgba(239,83,80,0.1); border-color: var(--negative); }
+
+        /* ── Modal (Options) ── */
+        .eco-modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+            display: flex; align-items: flex-start; justify-content: center;
+            padding: 40px 20px; overflow-y: auto; z-index: 50;
+        }
+        .eco-modal-overlay[hidden] { display: none; }
+        .eco-modal {
+            background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px;
+            box-shadow: var(--shadow); width: 100%; max-width: 640px;
+        }
+        .eco-modal-header { display: flex; align-items: center; gap: 10px; padding: 14px 18px; border-bottom: 1px solid var(--border); }
+        .eco-modal-header h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.6px; color: var(--accent); }
+        .eco-modal-close { margin-left: auto; background: transparent; border: none; color: var(--text-muted); font-size: 18px; cursor: pointer; line-height: 1; }
+        .eco-modal-close:hover { color: var(--text); }
+        .eco-modal-body { max-height: 70vh; overflow-y: auto; }
+        .eco-modal-section-title { padding: 12px 18px 4px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-subtle); }
+
+        .toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 9px 18px; gap: 12px; border-bottom: 1px solid var(--border); cursor: pointer; user-select: none; }
+        .toggle-row:hover { background: var(--bg-hover); }
+        .toggle-label { font-size: 12.5px; color: var(--text); }
+        .switch { position: relative; display: inline-block; width: 38px; height: 21px; flex-shrink: 0; }
+        .switch input { opacity: 0; width: 0; height: 0; position: absolute; }
+        .slider { position: absolute; inset: 0; background: var(--text-subtle); border-radius: 21px; transition: background 0.2s; }
+        .slider::before { content: ''; position: absolute; width: 15px; height: 15px; left: 3px; top: 3px; background: #fff; border-radius: 50%; transition: transform 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.4); }
+        input:checked + .slider { background: var(--accent); }
+        input:checked + .slider::before { transform: translateX(17px); }
+
+        .eco-modal-actions { display: flex; gap: 8px; justify-content: space-between; flex-wrap: wrap; padding: 12px 18px; border-top: 1px solid var(--border); }
+        .eco-paste-wrap { padding: 12px 18px; }
+        .eco-paste-wrap textarea {
+            width: 100%; background: var(--bg); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px;
+            color: var(--text); padding: 8px; font-size: 11px; font-family: monospace; resize: vertical;
+        }
+        .eco-paste-wrap textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <div class="header">
+        <div class="header-logo">⠿</div>
+        <div class="header-text">
+            <h1>Eco Sim</h1>
+            <p>Colony economy calculator</p>
+        </div>
+        <a class="header-back" href="dashboard.html">← Dashboard</a>
+    </div>
+
+    <div class="card">
+        <div class="eco-toolbar">
+            <div class="eco-field">
+                <label for="eco-race-selector">Race</label>
+                <select id="eco-race-selector" title="Select the race you want to use."></select>
+            </div>
+            <div class="eco-field">
+                <label for="eco-turnfactor">Turns</label>
+                <input id="eco-turnfactor" type="number" min="1" max="90" step="1" value="1" title="How many turns income is calculated over.">
+            </div>
+            <button class="eco-btn eco-btn--primary" id="eco-create-colony" title="Add a colony, up to the max allowed for this race.">+ Create Colony</button>
+            <button class="eco-btn" id="eco-view-toggle">Production View</button>
+            <div class="eco-spacer"></div>
+            <button class="eco-btn" id="eco-options-btn">Options</button>
+            <button class="eco-btn eco-btn--danger" id="eco-clear-all" title="Reset everything to default.">Clear</button>
+        </div>
+    </div>
+
+    <div class="eco-row-5">
+        <div class="card" id="eco-infra-card">
+            <div class="card-header"><div class="card-icon">🏗</div><span class="card-title">Infrastructure</span></div>
+            <div class="eco-toolbar">
+                <div class="eco-field"><label for="eco-housing">Housing</label><input id="eco-housing" type="number" step="1" min="0" value="0"></div>
+                <div class="eco-field"><label for="eco-commercial">Commercial</label><input id="eco-commercial" type="number" step="1" min="0" value="0"></div>
+                <div class="eco-field"><label for="eco-industry">Industry</label><input id="eco-industry" type="number" step="1" min="0" value="0"></div>
+                <div class="eco-field"><label for="eco-agriculture">Agriculture</label><input id="eco-agriculture" type="number" step="1" min="0" value="0"></div>
+                <div class="eco-field"><label for="eco-mining">Mining</label><input id="eco-mining" type="number" step="1" min="0" value="0"></div>
+            </div>
+            <div class="eco-stat-row" data-toggle="turn_calculator" id="eco-turn-next">Next: —</div>
+            <div class="eco-stat-row" data-toggle="turn_calculator" id="eco-turn-total">Total: —</div>
+        </div>
+
+        <div class="card" id="eco-market-card">
+            <div class="card-header"><div class="card-icon">📈</div><span class="card-title">Market</span></div>
+            <div class="eco-toggle-row">
+                <span>Goods</span>
+                <button class="eco-btn" id="eco-goods-toggle">Yes</button>
+                <input id="eco-goods-price" type="number" min="0" max="100" value="4" title="Sell price for extra goods.">
+            </div>
+            <div class="eco-toggle-row">
+                <span>Food</span>
+                <button class="eco-btn" id="eco-food-toggle">Yes</button>
+                <input id="eco-food-price" type="number" min="0" max="100" value="8" title="Sell price for extra food.">
+            </div>
+            <div class="eco-toggle-row">
+                <span>Raw Materials</span>
+                <button class="eco-btn" id="eco-rm-toggle">Yes</button>
+                <input id="eco-rm-price" type="number" min="0" max="100" value="1" title="Sell price for extra raw materials.">
+            </div>
+        </div>
+
+        <div class="card" id="eco-racemods-card">
+            <div class="card-header">
+                <div class="card-icon">🧬</div><span class="card-title">Race Mods</span>
+                <span class="card-sub"><span id="eco-race-name">—</span> · max <span id="eco-race-colonies">—</span> colonies</span>
+            </div>
+            <div class="eco-mods-grid">
+                <div class="eco-mod-label">Tax from population</div><div class="eco-mod-value" id="eco-mod-tax">—</div>
+                <div class="eco-mod-label">Agriculture yield</div><div class="eco-mod-value" id="eco-mod-agriculture">—</div>
+                <div class="eco-mod-label">Tax from commercial</div><div class="eco-mod-value" id="eco-mod-commercial">—</div>
+                <div class="eco-mod-label">Industry efficiency</div><div class="eco-mod-value" id="eco-mod-industry">—</div>
+                <div class="eco-mod-label">Demand for goods</div><div class="eco-mod-value" id="eco-mod-demand">—</div>
+                <div class="eco-mod-label">Infra maintenance</div><div class="eco-mod-value" id="eco-mod-maintenance">—</div>
+                <div class="eco-mod-label">Mineral generation</div><div class="eco-mod-value" id="eco-mod-mineral">—</div>
+                <div class="eco-mod-label">Plunder</div><div class="eco-mod-value" id="eco-mod-plunder">—</div>
+            </div>
+        </div>
+
+        <div class="card" id="eco-income-card">
+            <div class="card-header"><div class="card-icon">💰</div><span class="card-title">Income Summary</span></div>
+            <div class="eco-income-credits" id="eco-income-credits">Credits: —</div>
+            <div class="eco-income-strip">
+                <span id="eco-income-food">Food +0</span>
+                <span id="eco-income-goods">Goods +0</span>
+                <span id="eco-income-minerals">Minerals +0</span>
+            </div>
+            <div class="eco-income-perstat">
+                <span id="eco-income-perland">$0 /land</span>
+                <span id="eco-income-perpr">$0 /pr</span>
+                <span id="eco-income-perpop">$0 /pop</span>
+            </div>
+            <div data-toggle="income_section">
+                <div class="eco-stat-row" data-toggle="total_population" id="eco-line-total_population"></div>
+                <div class="eco-stat-row" data-toggle="taxes_collected" id="eco-line-taxes_collected"></div>
+                <div class="eco-stat-row" data-toggle="tax_per_pop" id="eco-line-tax_per_pop"></div>
+                <div class="eco-stat-row" data-toggle="goods_sold_value" id="eco-line-goods_sold_value"></div>
+                <div class="eco-stat-row" data-toggle="food_made" id="eco-line-food_made"></div>
+                <div class="eco-stat-row" data-toggle="food_need" id="eco-line-food_need"></div>
+                <div class="eco-stat-row" data-toggle="food_gained" id="eco-line-food_gained"></div>
+                <div class="eco-stat-row" data-toggle="goods_need" id="eco-line-goods_need"></div>
+                <div class="eco-stat-row" data-toggle="goods_made" id="eco-line-goods_made"></div>
+                <div class="eco-stat-row" data-toggle="goods_gained" id="eco-line-goods_gained"></div>
+                <div class="eco-stat-row" data-toggle="commerce_income" id="eco-line-commerce_income"></div>
+                <div class="eco-stat-row" data-toggle="average_loyalty" id="eco-line-average_loyalty"></div>
+                <div class="eco-stat-row" data-toggle="maintenance_cost" id="eco-line-maintenance_cost"></div>
+                <div class="eco-stat-row" data-toggle="land_used" id="eco-line-land_used"></div>
+                <div class="eco-stat-row" data-toggle="total_land" id="eco-line-total_land"></div>
+                <div class="eco-stat-row" data-toggle="total_power" id="eco-line-total_power"></div>
+                <div class="eco-stat-row" data-toggle="average_land" id="eco-line-average_land"></div>
+                <div class="eco-stat-row" data-toggle="total_plunder" id="eco-line-total_plunder"></div>
+            </div>
+        </div>
+
+        <div class="card" id="eco-minerals-card" data-toggle="mineral_section">
+            <div class="card-header"><div class="card-icon">💎</div><span class="card-title">Minerals</span></div>
+            <div class="eco-toggle-row"><span id="eco-mineral-amount-terran_metal">Terran Metal: +0</span><button class="eco-btn" id="eco-mineral-toggle-terran_metal">No</button><input id="eco-mineral-price-terran_metal" type="number" min="0" max="1000" value="1000"></div>
+            <div class="eco-toggle-row"><span id="eco-mineral-amount-red_crystal">Red Crystal: +0</span><button class="eco-btn" id="eco-mineral-toggle-red_crystal">No</button><input id="eco-mineral-price-red_crystal" type="number" min="0" max="1000" value="1000"></div>
+            <div class="eco-toggle-row"><span id="eco-mineral-amount-white_crystal">White Crystal: +0</span><button class="eco-btn" id="eco-mineral-toggle-white_crystal">No</button><input id="eco-mineral-price-white_crystal" type="number" min="0" max="1000" value="1000"></div>
+            <div class="eco-toggle-row"><span id="eco-mineral-amount-rutile">Rutile: +0</span><button class="eco-btn" id="eco-mineral-toggle-rutile">No</button><input id="eco-mineral-price-rutile" type="number" min="0" max="1000" value="1000"></div>
+            <div class="eco-toggle-row"><span id="eco-mineral-amount-composite">Composite: +0</span><button class="eco-btn" id="eco-mineral-toggle-composite">No</button><input id="eco-mineral-price-composite" type="number" min="0" max="1000" value="1000"></div>
+            <div class="eco-toggle-row"><span id="eco-mineral-amount-strafez_organism">Str. Organism: +0</span><button class="eco-btn" id="eco-mineral-toggle-strafez_organism">No</button><input id="eco-mineral-price-strafez_organism" type="number" min="0" max="1000" value="1000"></div>
+            <div class="eco-stat-row">Minerals total: <span id="eco-minerals-total">0</span> · Planet count: <span id="eco-planet-count">0</span></div>
+            <div class="eco-toggle-row"><span>Fleet Upkeep</span><input id="eco-fleet-upkeep" type="number" min="-999999999999" max="999999999999" value="0"></div>
+            <div class="eco-stat-row" id="eco-free-upkeep" hidden></div>
+        </div>
+    </div>
+
+    <div class="card card--wide" id="eco-colonies-card">
+        <div class="card-header"><div class="card-icon">🌍</div><span class="card-title">Colonies</span></div>
+        <div class="eco-quickbtns" data-toggle="quick_econs">
+            <button class="eco-btn" id="eco-max-loyalty" title="Max loyalty on all colonies.">Max Loy.</button>
+            <button class="eco-btn" id="eco-min-loyalty" title="Default loyalty on all colonies.">Min Loy.</button>
+            <button class="eco-btn" data-econ="Minimum Pop" title="Set minimum housing on all colonies.">Min. Pop</button>
+            <button class="eco-btn" data-econ="Tax" title="Max housing on all colonies.">Tax</button>
+            <button class="eco-btn" data-econ="Commercial" title="Max commercial on all colonies.">Com.</button>
+            <button class="eco-btn" data-econ="Industrial" title="Max industry on all colonies.">Ind.</button>
+            <button class="eco-btn" data-econ="Agriculture" title="Max agriculture on all colonies.">Agr.</button>
+            <button class="eco-btn" data-econ="Mining" title="Max mining on all colonies.">Mining</button>
+            <button class="eco-btn" data-econ="Tax & Agri" title="Max housing and agriculture.">Tax Agr.</button>
+            <button class="eco-btn" data-econ="Tax & Industry" title="Max housing and industry.">Tax Ind.</button>
+            <button class="eco-btn" data-econ="Tax & Comm." title="Max housing and comm (goods).">Tax Com.</button>
+            <button class="eco-btn" data-econ="Tax & Agri & Industry" title="Max housing, industry, and agriculture.">Tax Agr. Ind.</button>
+            <button class="eco-btn" data-econ="Tax & Agri & Comm" title="Max housing, comm (goods), and agriculture.">Tax Agr. Com.</button>
+            <button class="eco-btn eco-btn--danger" id="eco-remove-infra" title="Remove infrastructure on all colonies.">Rem. Infra.</button>
+        </div>
+
+        <div id="eco-colony-overview" class="eco-table-wrap">
+            <table class="eco-table">
+                <thead><tr>
+                    <th>Capt.</th><th>Plnts</th><th>Class</th><th>Land</th><th>Population</th><th>Loyalty</th>
+                    <th>Housing</th><th>Comm.</th><th>Ind.</th><th>Agri.</th><th>Min.</th><th>Mineral</th><th></th>
+                </tr></thead>
+                <tbody id="eco-colony-rows"></tbody>
+            </table>
+        </div>
+
+        <div id="eco-colony-production" class="eco-table-wrap" hidden>
+            <table class="eco-table">
+                <thead><tr>
+                    <th>Class</th><th>Land</th><th>Taxes</th><th>Commerce</th><th>Food Req</th><th>Food Made</th><th>Goods Req</th><th>Goods Made</th><th>Minerals</th>
+                </tr></thead>
+                <tbody id="eco-production-rows"></tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<div class="eco-modal-overlay" id="eco-options-overlay" hidden>
+    <div class="eco-modal">
+        <div class="eco-modal-header">
+            <h2>Options</h2>
+            <button class="eco-modal-close" id="eco-options-close" aria-label="Close">×</button>
+        </div>
+        <div class="eco-modal-body">
+            <div class="eco-modal-section-title">Sections</div>
+            <div id="eco-opt-sections"></div>
+            <div class="eco-modal-section-title">Income Summary Lines</div>
+            <div id="eco-opt-lines"></div>
+            <div class="eco-modal-section-title">Behavior</div>
+            <div id="eco-opt-yesno"></div>
+            <div class="eco-modal-section-title">Save / Load (localStorage)</div>
+            <div id="eco-opt-save"></div>
+            <div class="eco-modal-actions">
+                <button class="eco-btn" id="eco-load-saved">Load</button>
+                <button class="eco-btn eco-btn--danger" id="eco-delete-saved">Delete</button>
+                <button class="eco-btn" id="eco-opt-reset">Reset to Defaults</button>
+            </div>
+            <div class="eco-modal-section-title">Paste Colony Data</div>
+            <div class="eco-paste-wrap">
+                <textarea id="eco-paste" rows="10" placeholder="Paste colony infrastructure page here."></textarea>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="ecosim.js"></script>
+</body>
+</html>

@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Jaspers GC Mods",
-  "version": "3.2",
+  "version": "3.4",
   "permissions": [
     "storage",
     "webRequest",
@@ -43,6 +43,7 @@
         "features/income.js",
         "features/updates.js",
         "features/chat.js",
+        "features/artifact-tracker.js",
         "features/quick-build.js",
         "features/battle-logs.js",
         "features/colupgrade-land.js",
@@ -59,7 +60,9 @@
         "dashboard.html",
         "dashboard.js",
         "splitview.html",
-        "splitview.js"
+        "splitview.js",
+        "ecosim.html",
+        "ecosim.js"
       ],
       "matches": [
         "https://gcc.wrindustries.com/*"

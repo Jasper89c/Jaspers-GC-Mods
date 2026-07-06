@@ -564,6 +564,189 @@
             transition: background 0.12s, border-color 0.12s;
         }
         .cl-add-btn:hover { background: rgba(255,152,0,0.22); border-color: var(--accent); }
+
+        /* ── Artifact Tracker ── */
+        .tracker-form {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding: 12px 16px 0;
+        }
+
+        .tracker-form__row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .tracker-field {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex: 1 1 140px;
+        }
+
+        .tracker-field input,
+        .tracker-field select {
+            background: var(--bg);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 6px;
+            color: var(--text);
+            padding: 6px 8px;
+            font-size: 12px;
+            font-family: inherit;
+        }
+
+        .tracker-field input:focus,
+        .tracker-field select:focus {
+            outline: 2px solid var(--accent);
+            outline-offset: 1px;
+        }
+
+        .tracker-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            padding: 0 16px 12px;
+        }
+
+        .tracker-btn {
+            padding: 6px 14px;
+            border-radius: 6px;
+            border: 1px solid rgba(255,255,255,0.1);
+            background: transparent;
+            color: var(--text-muted);
+            font-size: 11px;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.12s;
+        }
+
+        .tracker-btn:hover {
+            border-color: rgba(255,255,255,0.2);
+            color: var(--text);
+        }
+
+        .tracker-btn--primary {
+            background: var(--accent-dim);
+            border-color: var(--accent-border);
+            color: var(--accent);
+        }
+
+        .tracker-btn--primary:hover {
+            background: rgba(255,152,0,0.22);
+            border-color: var(--accent);
+        }
+
+        .tracker-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding: 0 16px 16px;
+        }
+
+        .tracker-empty {
+            padding: 10px 12px;
+            border: 1px dashed rgba(255,255,255,0.1);
+            border-radius: 8px;
+            color: var(--text-muted);
+            font-size: 12px;
+        }
+
+        .tracker-date-group {
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 8px;
+            overflow: hidden;
+            background: rgba(255,255,255,0.02);
+        }
+
+        .tracker-date-header,
+        .tracker-block-header {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            padding: 9px 12px;
+            background: transparent;
+            border: none;
+            color: var(--text);
+            font-size: 12px;
+            font-family: inherit;
+            text-align: left;
+            cursor: pointer;
+        }
+
+        .tracker-date-header:hover,
+        .tracker-block-header:hover {
+            background: rgba(255,255,255,0.04);
+        }
+
+        .tracker-date-header::after,
+        .tracker-block-header::after {
+            content: '▾';
+            color: var(--text-muted);
+            font-size: 10px;
+            transition: transform 0.16s;
+        }
+
+        .tracker-date-group.collapsed .tracker-date-header::after,
+        .tracker-block-group.collapsed .tracker-block-header::after {
+            transform: rotate(-90deg);
+        }
+
+        .tracker-date-label {
+            font-weight: 700;
+        }
+
+        .tracker-date-meta,
+        .tracker-block-meta {
+            color: var(--text-muted);
+            font-size: 11px;
+            white-space: nowrap;
+        }
+
+        .tracker-date-body,
+        .tracker-block-body {
+            padding: 0 12px 10px;
+        }
+
+        .tracker-date-group.collapsed .tracker-date-body,
+        .tracker-block-group.collapsed .tracker-block-body {
+            display: none;
+        }
+
+        .tracker-block-group {
+            border-top: 1px solid rgba(255,255,255,0.06);
+            padding-top: 2px;
+        }
+
+        .tracker-block-group:first-of-type {
+            border-top: none;
+        }
+
+        .tracker-artifact-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 0;
+            font-size: 12px;
+            color: var(--text);
+        }
+
+        .tracker-artifact-item + .tracker-artifact-item {
+            border-top: 1px dashed rgba(255,255,255,0.06);
+        }
+
+        .tracker-artifact-count {
+            color: var(--accent);
+            font-weight: 700;
+        }
     </style>
 </head>
 <body>
@@ -575,7 +758,7 @@
                 <h1>Jaspers GC Mods</h1>
                 <p>Feature dashboard · gcc.wrindustries.com</p>
             </div>
-            <div class="version">v3.1</div>
+            <div class="version">v3.3</div>
         </div>
 
         <div class="grid">
@@ -705,6 +888,18 @@
                 </label>
             </div>
 
+            <div class="card card--wide" id="artifact-tracker-card">
+                <div class="card-header">
+                    <div class="card-icon">🧿</div>
+                    <span class="card-title">Artifact Tracker</span>
+                </div>
+
+                <div id="artifact-tracker-list" class="tracker-list"></div>
+                <div class="log-actions-row">
+                    <button class="log-btn log-btn--danger" id="tracker-clear-btn">Clear Tracker</button>
+                </div>
+            </div>
+
             <div class="card card--wide" id="links-card">
                 <div class="card-header">
                     <div class="card-icon">🔗</div>
@@ -779,6 +974,16 @@
 
                 <div class="sv-actions-row">
                     <button class="sv-open-btn" id="sv-open-btn">Open Split View ↗</button>
+                </div>
+            </div>
+
+            <div class="card" id="ecosim-card">
+                <div class="card-header">
+                    <div class="card-icon">📊</div>
+                    <span class="card-title">Eco Sim</span>
+                </div>
+                <div class="sv-actions-row">
+                    <button class="sv-open-btn" id="ecosim-open-btn">Open Eco Sim ↗</button>
                 </div>
             </div>
 
