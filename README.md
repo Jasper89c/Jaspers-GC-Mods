@@ -1,4 +1,4 @@
-check out this GC mini game : https://jasper89c.itch.io/galactic-conquest-mini-game
+
 
 
 # GC Helper Tool
